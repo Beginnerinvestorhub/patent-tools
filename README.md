@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="connector/icon-dark.png" alt="Patent Tools icon: a wall outlet with a plug, labeled FIG. 1" width="128">
+</p>
+
 # Patent Tools
 
 Two companion tools that give Claude patent superpowers: live access to the

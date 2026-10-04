@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="icon-dark.png" alt="Patent Tools icon: a wall outlet with a plug, labeled FIG. 1" width="128">
+</p>
+
 # Patent Connector (USPTO)
 
 Patent Connector gives Claude live access to the USPTO Open Data Portal (ODP). Claude can search patents and applications, pull a clean summary of any file, and read the actual text of claims, abstracts and specifications so it can compare them against your invention.
