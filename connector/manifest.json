@@ -1,0 +1,81 @@
+{
+  "manifest_version": "0.3",
+  "name": "patent-connector",
+  "display_name": "Patent Connector (USPTO)",
+  "version": "1.1.1",
+  "description": "Search USPTO patents and applications and read their claims, abstracts and specifications, using your own free USPTO API key.",
+  "long_description": "Patent Connector gives Claude live access to the USPTO Open Data Portal (ODP). Search applications and granted patents by keyword, exact phrase or field, with filing date filters for prior art cutoffs. Pull a clean summary of any application, list the documents in its file wrapper, and read the actual text of claims, abstracts and specifications so Claude can compare them against your invention.\n\nRequires a free API key from data.uspto.gov (sign in, then My ODP). Your key is stored by Claude Desktop and sent only to api.uspto.gov. The extension has no servers of its own and collects no data.\n\nThis tool helps with research. It is not legal advice; have a registered patent practitioner review any search or filing.",
+  "author": {
+    "name": "Kevin Ringler",
+    "url": "https://github.com/Beginnerinvestorhub"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Beginnerinvestorhub/patent-tools"
+  },
+  "homepage": "https://github.com/Beginnerinvestorhub/patent-tools/tree/main/connector",
+  "documentation": "https://github.com/Beginnerinvestorhub/patent-tools/blob/main/connector/README.md",
+  "support": "https://github.com/Beginnerinvestorhub/patent-tools/issues",
+  "privacy_policies": [
+    "https://github.com/Beginnerinvestorhub/patent-tools/blob/main/connector/PRIVACY.md"
+  ],
+  "icon": "icon-dark.png",
+  "server": {
+    "type": "node",
+    "entry_point": "index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": [
+        "${__dirname}/index.js"
+      ],
+      "env": {
+        "USPTO_ODP_API_KEY": "${user_config.uspto_odp_api_key}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "search_patents",
+      "description": "Search USPTO applications and granted patents by keywords, exact phrase or field syntax, with filing date filters and paging."
+    },
+    {
+      "name": "get_patent",
+      "description": "Get a concise summary of one application: status, dates, patent number, inventors, assignees, classifications and recent events."
+    },
+    {
+      "name": "get_patent_documents",
+      "description": "List the key documents in an application's file wrapper and show which ones have readable text."
+    },
+    {
+      "name": "get_document_text",
+      "description": "Read the plain text of claims, abstracts, specifications and other text documents from a file wrapper."
+    }
+  ],
+  "keywords": [
+    "patents",
+    "uspto",
+    "prior art",
+    "intellectual property",
+    "patent search"
+  ],
+  "license": "Apache-2.0",
+  "compatibility": {
+    "platforms": [
+      "win32",
+      "darwin",
+      "linux"
+    ],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  },
+  "user_config": {
+    "uspto_odp_api_key": {
+      "type": "string",
+      "title": "USPTO ODP API Key",
+      "description": "Your free API key from data.uspto.gov (sign in, then open My ODP).",
+      "required": true,
+      "sensitive": true
+    }
+  }
+}

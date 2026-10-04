@@ -1,0 +1,22 @@
+{
+  "name": "patent-tools",
+  "version": "1.0.0",
+  "description": "USPTO patent drawing skill plus live USPTO patent search and document reading via the Patent Connector MCP server.",
+  "author": {
+    "name": "Kevin Ringler",
+    "url": "https://github.com/Beginnerinvestorhub"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Beginnerinvestorhub/patent-tools"
+  },
+  "homepage": "https://github.com/Beginnerinvestorhub/patent-tools",
+  "license": "Apache-2.0",
+  "keywords": [
+    "patents",
+    "uspto",
+    "patent drawings",
+    "prior art",
+    "intellectual property"
+  ]
+}

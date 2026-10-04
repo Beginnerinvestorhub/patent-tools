@@ -1,0 +1,21 @@
+# Security Policy
+
+## Supported versions
+
+Only the latest released version receives security fixes.
+
+## Reporting a vulnerability
+
+Please report security problems privately through the repository's
+"Report a vulnerability" (GitHub Security Advisories) feature rather than a
+public issue. Include what you found, how to reproduce it, and the version.
+You can expect an acknowledgement within 7 days.
+
+## Design notes
+
+* The USPTO API key is read from the environment, sent only over HTTPS to
+  uspto.gov hosts, dropped on any redirect that leaves uspto.gov, and never
+  included in tool output. See `test/security.mjs`.
+* All tools are read only. The extension writes no files and runs no shell
+  commands.
+* Responses are capped at 25 MB; inputs are validated before any request.

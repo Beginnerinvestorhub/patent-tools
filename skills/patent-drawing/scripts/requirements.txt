@@ -1,0 +1,8 @@
+# Minimum versions are the ones the scripts were tested with (Windows and Linux).
+# check_drawing.py
+svgelements>=1.9.6
+# build_pdf.py (svglib 2.x provides the font registration API used here)
+svglib>=2.2
+reportlab>=5.0
+# optional: PDF verification and PNG previews in build_pdf.py
+pymupdf>=1.27

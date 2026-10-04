@@ -1,0 +1,8 @@
+test/
+docs/
+*.mcpb
+icon.svg
+icon-dark.svg
+icon.png
+icon-64.png
+icon-dark-64.png

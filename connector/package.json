@@ -1,0 +1,20 @@
+{
+  "name": "patent-connector",
+  "version": "1.1.1",
+  "description": "MCP server for the USPTO Open Data Portal: search patents and read claims, abstracts and specifications with your own API key.",
+  "main": "index.js",
+  "type": "module",
+  "license": "Apache-2.0",
+  "author": "Kevin Ringler",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "test": "node test/smoke.mjs",
+    "pack": "npx -y @anthropic-ai/mcpb pack . ../patent-connector-1.1.1.mcpb",
+    "test:security": "node test/security.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  }
+}

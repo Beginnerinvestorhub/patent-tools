@@ -1,0 +1,5 @@
+1. A method for protecting user records, comprising:
+(a) receiving a user record at a server;
+(b) encrypting the user record with a key associated with the user;
+(c) storing the encrypted user record in a database; and
+(d) returning a confirmation to a client device.

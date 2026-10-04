@@ -1,0 +1,5 @@
+[0031] Referring to FIG. 1, the server 110 first receives the user record from the
+client device 102. The server 110 then stores the user record in the database 120,
+after which an encryption service 130 encrypts the stored record in place using a
+key associated with the user. Finally, the server 110 returns a confirmation to the
+client device 102.

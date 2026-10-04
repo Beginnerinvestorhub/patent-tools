@@ -1,0 +1,7 @@
+Patent Connector (USPTO)
+Copyright 2026 Kevin Ringler
+
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This extension calls the USPTO Open Data Portal API. USPTO data is provided
+by the United States Patent and Trademark Office under its own terms of use.
