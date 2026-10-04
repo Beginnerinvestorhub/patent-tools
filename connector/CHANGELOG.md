@@ -2,6 +2,21 @@
 
 Versions follow semantic versioning.
 
+## 1.3.1 (2026-10-04)
+
+### Fixed
+- `get_drawings` now shows drawing sheets stored with CCITT Group 3 or
+  Group 4 fax compression, which is how most issued patents and published
+  applications are stored. 1.3.0 listed those pages as "cannot be shown",
+  so in real searches most patents returned no images. Found in the first
+  real research session; the 1.3.0 test fixture happened to use Flate.
+- The decoder, `lib/ccitt.js`, is adapted from Mozilla pdf.js (Apache 2.0,
+  credited in NOTICE and THIRD_PARTY_NOTICES.txt). Output is capped at the
+  same 50 MB per image limit and stops at the image's declared row count, so
+  damaged or hostile data cannot run away.
+- New offline tests on a real CCITT drawings PDF (US 10,706,165) and on
+  damaged fax data; the live smoke test also checks a fax compressed patent.
+
 ## 1.3.0 (2026-10-04)
 
 ### Added

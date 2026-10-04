@@ -242,10 +242,17 @@ await session("feat-nodrw", async (call) => {
   check("no DRW document: plain English error", r.isError && /has no drawings document \(DRW\)/.test(r.text), r.text);
 });
 
-await session("feat-ccitt", async (call) => {
+await session("feat-fax", async (call) => {
+  const r = await call("get_drawings", { applicationNumber: "18483359", pages: "1-3", maxDimension: 1000 });
+  const sizes = r.images.map((im) => { try { const d = decodePng(Buffer.from(im.data, "base64")); return { width: d.width, height: d.height }; } catch { return null; } });
+  check("CCITT fax pages (real USPTO file): all 3 shown as PNG", !r.isError && r.images.length === 3 && JSON.stringify(r.json?.pagesReturned) === "[1,2,3]" && !(r.json?.unreadablePages?.length), r.text);
+  check("CCITT fax pages: total page count 9, longest side 1000", r.json?.totalPages === 9 && sizes.every((s) => s && Math.max(s.width, s.height) === 1000), JSON.stringify(sizes));
+});
+
+await session("feat-unsupported", async (call) => {
   const r = await call("get_drawings", { applicationNumber: "18483359", pages: "1-2" });
-  check("CCITT page: not an error, other pages still shown", !r.isError && r.images.length === 1 && JSON.stringify(r.json?.pagesReturned) === "[1]", r.text);
-  check("CCITT page: explains the unsupported format and gives the page count", /Page 2 cannot be shown: .*CCITTFaxDecode/.test(r.text) && r.json?.totalPages === 2, r.text);
+  check("unsupported page: not an error, other pages still shown", !r.isError && r.images.length === 1 && JSON.stringify(r.json?.pagesReturned) === "[1]", r.text);
+  check("unsupported page: explains the format and gives the page count", /Page 2 cannot be shown: .*JBIG2Decode/.test(r.text) && r.json?.totalPages === 2, r.text);
   const r2 = await call("get_drawings", { applicationNumber: "18483359", pages: "2" });
   check("only unsupported pages: text only, with a Patent Center link", !r2.isError && r2.images.length === 0 && /patentcenter\.uspto\.gov/.test(r2.text), r2.text);
 });
@@ -348,10 +355,35 @@ check("sample page 1: /Decode [1 0] makes 1 bits black (page is mostly white)", 
   let refMsg = "";
   try { new PdfDocument(refLoop).pages(); } catch (e) { refMsg = e.message; }
   check("reference loop: plain error, no hang", /loop/.test(refMsg), refMsg);
-  const ccitt = buildImagePdf([{ image: { width: 8, height: 8, dict: "/ColorSpace /DeviceGray /BitsPerComponent 1 /Filter /CCITTFaxDecode", data: Buffer.alloc(8) } }]);
+  const jbig2 = buildImagePdf([{ image: { width: 8, height: 8, dict: "/ColorSpace /DeviceGray /BitsPerComponent 1 /Filter /JBIG2Decode", data: Buffer.alloc(8) } }]);
   let unsupported = null;
-  try { extractPageImage(new PdfDocument(ccitt), 0); } catch (e) { unsupported = e; }
-  check("CCITTFaxDecode raises UnsupportedImageError", unsupported instanceof UnsupportedImageError && /CCITTFaxDecode/.test(unsupported.message));
+  try { extractPageImage(new PdfDocument(jbig2), 0); } catch (e) { unsupported = e; }
+  check("JBIG2Decode raises UnsupportedImageError", unsupported instanceof UnsupportedImageError && /JBIG2Decode/.test(unsupported.message));
+  // CCITT fax: a real USPTO file, then hostile input.
+  const fax = new PdfDocument(fs.readFileSync(path.join(here, "fixtures", "drw-15015911-ccitt.pdf")));
+  const faxPage = extractPageImage(fax, 0);
+  let faxBlack = 0;
+  for (const v of faxPage.gray) if (v === 0) faxBlack++;
+  const faxRatio = faxBlack / faxPage.gray.length;
+  check("CCITT G4 page decodes at full size, mostly white with black line art", fax.pages().length === 9 && faxPage.width === 2480 && faxPage.height === 3508 && faxRatio > 0.02 && faxRatio < 0.1, faxPage.width + "x" + faxPage.height + " black " + faxRatio.toFixed(4));
+  // FIG. 1 of US 10,706,165 has a flowchart box border near the left: rows of solid black.
+  let longRun = 0;
+  for (let y = 0; y < faxPage.height && !longRun; y++) {
+    let run = 0;
+    for (let x = 0; x < faxPage.width; x++) { run = faxPage.gray[y * faxPage.width + x] === 0 ? run + 1 : 0; if (run > 1000) { longRun = y; break; } }
+  }
+  check("CCITT G4 page: long horizontal box lines come out solid", longRun > 0, "first row with a 1000 px line: " + longRun);
+  for (const [label, data, parms] of [
+    ["garbage", Buffer.from(Array.from({ length: 5000 }, (_, i) => (i * 7919) & 255)), "/K -1 /Columns 850 /Rows 1100"],
+    ["all ones, no Rows", Buffer.alloc(4096, 0xff), "/K -1 /Columns 850"],
+    ["empty", Buffer.alloc(0), "/K 0 /Columns 64 /Rows 64"],
+  ]) {
+    const bad = buildImagePdf([{ image: { width: 850, height: 1100, dict: "/ColorSpace /DeviceGray /BitsPerComponent 1 /Filter /CCITTFaxDecode /DecodeParms << " + parms + " >>", data } }]);
+    const t0 = Date.now();
+    let outcome;
+    try { const im = extractPageImage(new PdfDocument(bad), 0); outcome = im.width === 850 ? "image" : "wrong size"; } catch (e) { outcome = e instanceof PdfError ? "PdfError" : "crash: " + e.message; }
+    check("damaged CCITT data (" + label + "): image or PdfError, no crash, fast", (outcome === "image" || outcome === "PdfError") && Date.now() - t0 < 3000, outcome + " in " + (Date.now() - t0) + " ms");
+  }
   check("decompressed size limit is 50 MB per image", LIMITS.maxImageBytes === 50 * 1024 * 1024);
 }
 

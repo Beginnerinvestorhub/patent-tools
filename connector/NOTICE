@@ -3,5 +3,9 @@ Copyright 2026 Kevin Ringler
 
 Licensed under the Apache License, Version 2.0 (see LICENSE).
 
+lib/ccitt.js is adapted from Mozilla pdf.js (src/core/ccitt.js),
+Copyright 2012 Mozilla Foundation, licensed under the Apache License,
+Version 2.0. pdf.js credits the Xpdf CCITT decoder by Glyph & Cog.
+
 This extension calls the USPTO Open Data Portal API. USPTO data is provided
 by the United States Patent and Trademark Office under its own terms of use.

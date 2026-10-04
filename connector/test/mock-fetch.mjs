@@ -26,6 +26,8 @@ let calls = 0;
 // "feat-*" scenarios (test/features.mjs): patent number lookup and drawings.
 // ---------------------------------------------------------------------------
 const FIXTURE = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "drw-18483359.pdf");
+// A real USPTO drawings PDF whose pages are CCITT Group 4 fax images (US 10,706,165).
+const FAX_FIXTURE = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "drw-15015911-ccitt.pdf");
 const PATENTS = {
   // utility patent: stored as plain digits
   "12399789": { app: "18483359", stored: "12399789", title: "Isolated storage system access" },
@@ -47,13 +49,14 @@ function featDocuments() {
 }
 
 function featPdf() {
-  if (scenario === "feat-ccitt") {
-    // Page 1 is a normal Flate scan; page 2 claims CCITT fax compression.
+  if (scenario === "feat-unsupported") {
+    // Page 1 is a normal Flate scan; page 2 claims JBIG2 compression.
     return buildImagePdf([
       { image: bilevelScan(850, 1100) },
-      { image: { width: 850, height: 1100, dict: "/ColorSpace /DeviceGray /BitsPerComponent 1 /Filter /CCITTFaxDecode /DecodeParms << /K -1 /Columns 850 >>", data: Buffer.alloc(64, 0xaa) } },
+      { image: { width: 850, height: 1100, dict: "/ColorSpace /DeviceGray /BitsPerComponent 1 /Filter /JBIG2Decode", data: Buffer.alloc(64, 0xaa) } },
     ]);
   }
+  if (scenario === "feat-fax") return fs.readFileSync(FAX_FIXTURE);
   if (scenario === "feat-bomb") {
     // Declares a small 1 bit image but inflates to 60 MB.
     const bomb = zlib.deflateSync(Buffer.alloc(60 * 1024 * 1024));

@@ -13,7 +13,7 @@ It runs locally inside Claude Desktop as a desktop extension. You bring your own
 ## Setup
 
 1. Get a free API key: sign in at [data.uspto.gov](https://data.uspto.gov), open **My ODP**, and copy your key.
-2. Install `patent-connector-1.3.0.mcpb` by double clicking it, or drag it into Claude Desktop under **Settings > Extensions**.
+2. Install `patent-connector-1.3.1.mcpb` by double clicking it, or drag it into Claude Desktop under **Settings > Extensions**.
 3. Paste your key when prompted. Claude Desktop saves it in the extension's settings on your computer. The extension sends it only over HTTPS to uspto.gov and never shows it to Claude. You can regenerate the key any time in My ODP.
 
 Requires Claude Desktop with Node.js 18 or newer (bundled with Claude Desktop).
@@ -136,7 +136,7 @@ the Open Data Portal.
 * **Search scope.** Search matches titles and bibliographic fields (applicant, inventor, classification and similar). It does not search inside claim or description text. To compare substance, search first, then read candidates with `get_document_text`.
 * **Coverage.** ODP covers applications filed from 2001 onward. Older patents are not included.
 * **OCR text.** Document text comes from USPTO optical character recognition and can contain small errors. Drawings and most forms are scanned images with no text; view drawings with `get_drawings`.
-* **Drawings.** `get_drawings` reads the scanned page images inside the USPTO PDF and converts them to grayscale PNG images, downscaled with area averaging so thin lines stay visible. It decodes the formats USPTO uses for drawings today (Flate compressed 1 bit scans) and other common uncompressed and lossless formats. A page stored with CCITT fax, JBIG2, JPEG or JPEG 2000 compression, or drawn as vector graphics with no scan, is listed in the result with the reason instead of an image; the other pages are still shown. Each PNG is kept under about 1 MB (typically 20 to 80 KB for a line drawing at the default size).
+* **Drawings.** `get_drawings` reads the scanned page images inside the USPTO PDF and converts them to grayscale PNG images, downscaled with area averaging so thin lines stay visible. It decodes the formats USPTO uses for drawings: CCITT Group 4 fax compression (most issued patents and published applications) and Flate compressed 1 bit scans, plus other common uncompressed and lossless formats. A page stored with JBIG2, JPEG or JPEG 2000 compression, or drawn as vector graphics with no scan, is listed in the result with the reason instead of an image; the other pages are still shown. Each PNG is kept under about 1 MB (typically 20 to 80 KB for a line drawing at the default size).
 * **Rate limits.** USPTO applies rate limits per API key. When USPTO answers that it is busy (HTTP 429, 502, 503 or 504), the extension waits and retries up to two more times on its own, honoring the wait USPTO asks for (up to 10 seconds). If the limit persists you get a plain English message; wait a minute and try again.
 
 ## Troubleshooting
@@ -164,7 +164,7 @@ node --env-file=../.env test/smoke.mjs   # live test suite (needs a key in ../.e
 npm run build                         # rebuilds dist/patent-connector.mjs (plugin bundle)
 npm run test:bundle                   # offline tests against the bundle
 npm run check:bundle                  # bundle starts on its own and lists all tools
-npm run pack                          # builds ../patent-connector-1.3.0.mcpb
+npm run pack                          # builds ../patent-connector-1.3.1.mcpb
 ```
 
 The offline suites start the server with a simulated USPTO

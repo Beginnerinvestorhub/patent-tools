@@ -15,8 +15,8 @@ patent drawings.
 
 ## What's inside
 
-Versions: Patent Connector (USPTO) 1.3.0, Patent Drawing skill 1.2.1,
-plugin 1.2.0.
+Versions: Patent Connector (USPTO) 1.3.1, Patent Drawing skill 1.2.1,
+plugin 1.2.1.
 
 | Component | What it is |
 |---|---|
@@ -27,7 +27,7 @@ plugin 1.2.0.
 
 Pick the channel you use:
 
-* **Claude Desktop.** Double click `patent-connector-1.3.0.mcpb` (or drag it
+* **Claude Desktop.** Double click `patent-connector-1.3.1.mcpb` (or drag it
   into **Settings > Extensions**). See
   [connector/README.md](connector/README.md) for setup and your API key.
 * **Claude.ai.** Zip the `skills/patent-drawing` folder and upload it under
@@ -108,7 +108,7 @@ npm run test:offline                  # security, retry and feature tests (no ke
 node --env-file=../.env test/smoke.mjs   # live test suite (needs a free key)
 npm run build                         # rebuilds dist/patent-connector.mjs
 npm run test:bundle                   # offline tests against the bundle
-npm run pack                          # rebuilds ../patent-connector-1.3.0.mcpb
+npm run pack                          # rebuilds ../patent-connector-1.3.1.mcpb
 
 cd ../skills/patent-drawing
 pip install -r scripts/requirements.txt   # only the PDF builder needs packages

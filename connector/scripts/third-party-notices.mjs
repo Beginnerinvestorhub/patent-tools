@@ -46,6 +46,9 @@ fs.writeFileSync(
     "patent-connector.mjs is built from index.js (Copyright 2026 Kevin Ringler,\n" +
     "Apache License 2.0) and also contains the following packages, each under\n" +
     "its own license, reproduced in full below.\n\n" +
+    "It also contains lib/ccitt.js, adapted from Mozilla pdf.js\n" +
+    "(src/core/ccitt.js), Copyright 2012 Mozilla Foundation, under the Apache\n" +
+    "License, Version 2.0, the same license as index.js (see LICENSE).\n\n" +
     sections.join("\n"),
 );
 fs.rmSync(metaPath, { force: true });

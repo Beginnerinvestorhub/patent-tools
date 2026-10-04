@@ -4,6 +4,10 @@ patent-connector.mjs is built from index.js (Copyright 2026 Kevin Ringler,
 Apache License 2.0) and also contains the following packages, each under
 its own license, reproduced in full below.
 
+It also contains lib/ccitt.js, adapted from Mozilla pdf.js
+(src/core/ccitt.js), Copyright 2012 Mozilla Foundation, under the Apache
+License, Version 2.0, the same license as index.js (see LICENSE).
+
 @modelcontextprotocol/sdk 1.32.0 (MIT)
 ------------------------------------------------------------
 MIT License

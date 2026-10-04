@@ -175,6 +175,14 @@ check("get_drawings by patent number, one page at 800 px", !r.isError && images.
 r = await call("get_drawings", { applicationNumber: "18483359", pages: "99" });
 check("get_drawings page out of range", r.isError && /does not exist/.test(r.text), r.text.slice(0, 200));
 
+// A patent whose drawings are CCITT Group 4 fax images (the common case).
+r = await call("get_drawings", { patentNumber: "10,706,165", pages: "1", maxDimension: 800 });
+{
+  const faxImages = r.content.filter((c) => c.type === "image");
+  const faxInfo = faxImages.map((i) => pngInfo(i.data));
+  check("get_drawings on a fax compressed patent (US 10,706,165) shows the page", !r.isError && faxImages.length === 1 && faxInfo[0] && Math.max(faxInfo[0].width, faxInfo[0].height) === 800 && !(r.json?.unreadablePages?.length), r.text.slice(0, 200));
+}
+
 await client.close();
 console.log(failures ? "\n" + failures + " FAILED" : "\nALL PASSED");
 process.exit(failures ? 1 : 0);

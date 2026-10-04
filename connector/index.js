@@ -14,7 +14,7 @@ import {
 import { PdfDocument, PdfError, UnsupportedImageError, extractPageImage } from "./lib/pdf.js";
 import { downscale, orient, encodePngGray } from "./lib/raster.js";
 
-const VERSION = "1.3.0";
+const VERSION = "1.3.1";
 const API_KEY = (process.env.USPTO_ODP_API_KEY || "").trim();
 const BASE_URL = "https://api.uspto.gov/api/v1";
 const TIMEOUT_MS = 30000;

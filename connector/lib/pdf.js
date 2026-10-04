@@ -13,11 +13,12 @@
 //   * image XObjects on the page (and inside form XObjects), placed with the
 //     transformation matrix from the page content stream;
 //   * FlateDecode (with PNG and TIFF predictors), LZWDecode, ASCIIHexDecode,
-//     ASCII85Decode and RunLengthDecode;
+//     ASCII85Decode, RunLengthDecode and CCITTFaxDecode (fax Group 3 and 4,
+//     the format of most USPTO drawing sheets; see ccitt.js);
 //   * 1, 2, 4, 8 and 16 bit samples in DeviceGray, DeviceRGB, DeviceCMYK,
 //     CalGray, CalRGB, ICCBased, Indexed and Separation color spaces, /Decode
 //     arrays and /ImageMask.
-// Images compressed with CCITTFaxDecode, JBIG2Decode, DCTDecode or JPXDecode
+// Images compressed with JBIG2Decode, DCTDecode or JPXDecode
 // raise UnsupportedImageError so the caller can explain that page instead of
 // failing the whole document.
 //
@@ -27,6 +28,7 @@
 // with a plain English message.
 
 import zlib from "node:zlib";
+import { decodeCCITT } from "./ccitt.js";
 
 export class PdfError extends Error {}
 export class UnsupportedImageError extends PdfError {
@@ -232,8 +234,6 @@ function parseObject(lex, depth = 0) {
 // ---------------------------------------------------------------------------
 
 const UNSUPPORTED_IMAGE_FILTERS = {
-  CCITTFaxDecode: "CCITTFaxDecode (fax compression)",
-  CCF: "CCITTFaxDecode (fax compression)",
   JBIG2Decode: "JBIG2Decode",
   DCTDecode: "DCTDecode (JPEG)",
   DCT: "DCTDecode (JPEG)",
@@ -713,6 +713,15 @@ export class PdfDocument {
         case "RunLengthDecode":
         case "RL":
           data = runLengthDecode(data, limit);
+          break;
+        case "CCITTFaxDecode":
+        case "CCF":
+          try {
+            data = decodeCCITT(data, parm, limit, () => tooLarge(limit));
+          } catch (e) {
+            if (e instanceof PdfError) throw e;
+            throw new PdfError("a fax compressed (CCITT) image is damaged: " + e.message);
+          }
           break;
         default:
           if (UNSUPPORTED_IMAGE_FILTERS[name]) throw new UnsupportedImageError(UNSUPPORTED_IMAGE_FILTERS[name]);
