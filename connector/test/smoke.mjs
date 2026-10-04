@@ -1,11 +1,14 @@
 // Copyright 2026 Kevin Ringler
 // SPDX-License-Identifier: Apache-2.0
-// Live smoke test. Requires USPTO_ODP_API_KEY in the environment.
-// Run: node test/smoke.mjs
+// Live smoke test. Requires USPTO_ODP_API_KEY in the environment and network
+// access to api.uspto.gov, so it is not run in CI.
+// Run: node --env-file=../.env test/smoke.mjs   (key in the repository's .env)
+//  or: node test/smoke.mjs                       (key already in the environment)
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import zlib from "node:zlib";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 // --bundle runs the same tests against the committed single file bundle
@@ -32,8 +35,34 @@ const call = async (name, args) => {
   const text = r.content?.[0]?.text ?? "";
   let json = null;
   try { json = JSON.parse(text); } catch {}
-  return { isError: !!r.isError, text, json };
+  return { isError: !!r.isError, text, json, content: r.content || [] };
 };
+
+// Checks the PNG signature and header, and that the image data inflates to
+// exactly the expected size. Returns { width, height, depth } or null.
+function pngInfo(b64) {
+  const buf = Buffer.from(b64, "base64");
+  if (!buf.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return null;
+  let p = 8;
+  let ihdr = null;
+  const idat = [];
+  while (p + 8 <= buf.length) {
+    const len = buf.readUInt32BE(p);
+    const type = buf.toString("latin1", p + 4, p + 8);
+    const data = buf.subarray(p + 8, p + 8 + len);
+    if (type === "IHDR") ihdr = { width: data.readUInt32BE(0), height: data.readUInt32BE(4), depth: data[8], bytes: buf.length };
+    if (type === "IDAT") idat.push(data);
+    if (type === "IEND") break;
+    p += 12 + len;
+  }
+  if (!ihdr) return null;
+  try {
+    const raw = zlib.inflateSync(Buffer.concat(idat));
+    return raw.length === (Math.ceil((ihdr.width * ihdr.depth) / 8) + 1) * ihdr.height ? ihdr : null;
+  } catch {
+    return null;
+  }
+}
 
 // Discover test subjects at run time so the suite does not depend on any one
 // application staying unchanged at USPTO. Fixed numbers are the fallback.
@@ -73,7 +102,7 @@ console.log("Using granted application " + granted + (granted === FALLBACK.grant
 const grantedFormatted = granted.length === 8 ? granted.slice(0, 2) + "/" + granted.slice(2, 5) + "," + granted.slice(5) : granted;
 
 const { tools } = await client.listTools();
-check("4 tools listed", tools.length === 4, tools.map((t) => t.name).join(", "));
+check("5 tools listed", tools.length === 5 && tools.some((t) => t.name === "get_drawings"), tools.map((t) => t.name).join(", "));
 check("all tools annotated read only", tools.every((t) => t.annotations?.readOnlyHint === true && t.annotations?.title));
 
 let r = await call("search_patents", { query: "data isolation", limit: 3 });
@@ -116,6 +145,35 @@ check("abstract text", !r.isError && r.json.text.length > 100, "chars=" + r.json
 
 r = await call("get_document_text", { applicationNumber: withClaims, documentCode: "DRW" });
 check("drawings explain no text", r.isError && /no DRW document with text|scanned/.test(r.text));
+
+// Patent number lookup: US 12,399,789 is application 18483359 (verified at USPTO).
+r = await call("get_patent", { patentNumber: "12,399,789" });
+check("patentNumber 12,399,789 resolves to 18483359", !r.isError && r.json.applicationNumber === "18483359" && /resolved to application 18483359/.test(r.json.patentNumberLookup || ""), r.json?.patentNumberLookup || r.text);
+
+r = await call("get_patent", { patentNumber: "US 12,399,789 B1" });
+check("patentNumber with US prefix and kind code", !r.isError && r.json.applicationNumber === "18483359", r.text.slice(0, 200));
+
+r = await call("get_patent_documents", { patentNumber: "US12399789" });
+check("get_patent_documents by patent number lists drawings", !r.isError && r.json.documents.some((d) => d.code === "DRW" || d.code === "DRW.NONBW"), r.text.slice(0, 200));
+
+r = await call("get_patent", { patentNumber: "99999999" });
+check("unknown patent number: plain English not found", r.isError && /No USPTO application with patent number/.test(r.text), r.text.slice(0, 200));
+
+// Drawings as images.
+r = await call("get_drawings", { applicationNumber: "18483359" });
+let images = r.content.filter((c) => c.type === "image");
+let infos = images.map((i) => pngInfo(i.data));
+check("get_drawings returns text then PNG images", !r.isError && r.content[0]?.type === "text" && images.length >= 1 && images.length <= 3 && images.every((i) => i.mimeType === "image/png"), r.text.slice(0, 300));
+check("every drawing image is a valid PNG, longest side 1600", infos.length > 0 && infos.every((i) => i && Math.max(i.width, i.height) <= 1600), JSON.stringify(infos));
+console.log("  drawings: " + (r.json ? r.json.documentId + ", " + r.json.totalPages + " pages, " : "") + infos.map((i) => i && i.width + "x" + i.height + " " + i.bytes + " bytes").join("; "));
+
+r = await call("get_drawings", { patentNumber: "12,399,789", pages: "2", maxDimension: 800 });
+images = r.content.filter((c) => c.type === "image");
+infos = images.map((i) => pngInfo(i.data));
+check("get_drawings by patent number, one page at 800 px", !r.isError && images.length === 1 && infos[0] && Math.max(infos[0].width, infos[0].height) === 800 && /18483359/.test(r.json?.patentNumberLookup || ""), r.text.slice(0, 300));
+
+r = await call("get_drawings", { applicationNumber: "18483359", pages: "99" });
+check("get_drawings page out of range", r.isError && /does not exist/.test(r.text), r.text.slice(0, 200));
 
 await client.close();
 console.log(failures ? "\n" + failures + " FAILED" : "\nALL PASSED");
