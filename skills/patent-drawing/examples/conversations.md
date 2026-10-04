@@ -14,7 +14,8 @@ decisions are what matter.
 Draws one sheet: START, 102 RECEIVE SENSOR DATA, 104 FILTER WITH THRESHOLD,
 106 decision VALUE > LIMIT? (NO loops back to 102), 108 GENERATE ALERT,
 110 TRANSMIT ALERT, END, FIG. 1. Runs the checker and PDF build, views the
-preview, then replies with the output contract summary, including:
+preview, runs `brief_description.py` on the sheet and fills its placeholder,
+then replies with the output contract summary, including:
 
 ```
 Claim coverage
@@ -22,9 +23,18 @@ Claim coverage
   Claim 1, step (b) → FIG. 1, 104
   Claim 1, step (c) → FIG. 1, 106 and 108
   Claim 1, step (d) → FIG. 1, 110
+Checks
+  Numerals vs spec:    NOT CHECKED (no specification provided)
 Assumptions (please confirm)
   NO branch of 106 returns to 102 (claim does not say what happens below the limit)
+BRIEF DESCRIPTION OF THE DRAWINGS (draft for your attorney to review)
+  FIG. 1 is a flowchart of a method of generating an alert from sensor data.
 ```
+
+For a set with partial views `brief_description.py` groups them, and the
+filled line reads, for example, "FIGS. 3A and 3B together are a flowchart of
+an order fulfillment method." Lettered views that show different things
+(FIG. 4A a record, FIG. 4B session states) are split into one sentence each.
 
 Result file: `examples/fig-1-claim-flowchart.svg`.
 
@@ -62,12 +72,14 @@ that sequence until answered.
 
 **Situation:** `pip install` fails because there is no network.
 
-**Expected:** "I couldn't install the checking tools here (no network). I've
-drawn the SVG sheets and checked them by hand against the checklist, but the
-automated checker and PDF build did NOT RUN. To finish, run
-`pip install -r scripts/requirements.txt`, then the two commands below."
-Summary shows `Automated checker: NOT RUN (no network to install
-svgelements)`, never PASS.
+**Expected:** The checkers need no installs (svgelements is bundled), so
+Claude still runs `check_drawing.py` and reports its real result. Only the
+PDF is missing: "I couldn't install the PDF tools here (no network). The
+SVG sheets are drawn and the automated checker passed, but the PDF was NOT
+BUILT. To finish, run `pip install -r scripts/requirements.txt`, then the
+command below." Summary shows `Automated checker: PASS` and
+`PDF build/verify: NOT BUILT (no network to install svglib and reportlab)`,
+never PASS for the PDF.
 
 ## 6. Change midway
 

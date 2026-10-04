@@ -1,11 +1,11 @@
 # Patent Drawing Skill: Test Suite
 
-Version 1.1.0. Validates the skill for public release.
+Version 1.2.0. Validates the skill for public release.
 
 ## How to run
 
 1. Run the automated tests first: `python tests/run_script_tests.py`
-   (covers tests 9 and 10). They must pass before prompt tests mean anything.
+   (covers tests 9, 10 and 26 to 28). They must pass before prompt tests mean anything.
 2. Run each prompt test in a **fresh context** (new session or a separate
    agent) that has only the skill folder. Do not give the tester the
    Expected Result.
@@ -41,6 +41,9 @@ result. Use a flowchart."
   unstated failure path without flagging it is a fail).
 - Summary follows the output contract; anything assumed (for example what
   happens on invalid input) is listed under Assumptions.
+- Summary includes a draft BRIEF DESCRIPTION OF THE DRAWINGS ("FIG. 1 is a
+  flowchart of ...") marked for attorney review, and Numerals vs spec shows
+  NOT CHECKED (no specification provided).
 - Ends with the disclaimer.
 
 ## 2. Design patent (mode selection, honest limits)
@@ -176,10 +179,12 @@ blocked (for example a bare virtual environment with `PIP_NO_INDEX=1`).
 **Prompt:** same as test 1.
 
 **Expected:**
-- Tries the checker or install, sees it fail, says so plainly.
-- Still delivers SVG; summary shows checker and PDF as NOT RUN or NOT BUILT,
-  never PASS.
-- Gives the user the install command and the commands to run later.
+- Runs `check_drawing.py` anyway (it needs no installs; svgelements is
+  bundled in `scripts/vendor/`) and reports its real result.
+- Tries the PDF install at most once, sees it fail, says so plainly, and
+  does not work around it.
+- Still delivers SVG; summary shows the PDF as NOT BUILT, never PASS.
+- Gives the user the install command and the PDF command to run later.
 
 ## 14. Change midway
 
@@ -347,18 +352,52 @@ what I need to file."
 - Checks with `--partial` (or the full set), PASS.
 - Does not relabel or alter sheet 1.
 
+## 26. Numerals versus specification (automated)
+
+`python scripts/check_numerals.py --spec tests/fixtures/numerals/spec-match.md`
+on the six sheet example set gives OVERALL: PASS (exit 0) even though the
+specification contains dates, units, claim and paragraph references, and
+application and patent numbers. With `spec-mismatch.txt` and
+`spec-mismatch.docx` on FIG. 1, 3A and 3B it gives OVERALL: FAIL (exit 1)
+and lists exactly: FAIL for numerals 110 and 312 to 318 only in the
+drawings and for FIG. 3C and FIG. 6 mentioned but missing, WARN for 120
+and 122 only in the specification. A spec only numeral on its own is
+OVERALL: WARN with exit 0. Statute and rule citations ("35 U.S.C. 112",
+"37 CFR 1.84", "MPEP 608.02") never produce numerals, and a second `--spec`
+file (claims) is combined with the first. Unsafe SVGs are refused; an
+unreadable specification is a FAIL (exit 1).
+
+## 27. A4 sheets (automated)
+
+`tests/fixtures/a4/` (an upright A4 sheet and a sideways A4 sheet drawn to
+the limits in complex-figures.md: turned x 10 to 263, y 25 to 195,
+`matrix(0 -1 1 0 0 297)`) passes the checker and builds as two A4 pages.
+Moving a line past each limit (x above 263 into the sheet number band, x
+above 272 or below 10, y below 25 or above 195) fails. The sideways sheet
+alone passes with `--partial` and builds as an A4 replacement sheet with
+"Replacement Sheet" and 2/2 at the top.
+
+## 28. Standard library only (automated)
+
+The runner creates a bare virtual environment (no packages) and checks that
+`check_drawing.py` (bundled svgelements, built in Helvetica widths) passes
+the six sheet example set and the A4 set, still catches the overlap, bad
+sheet and unsafe fixtures, that `check_numerals.py` gives the same results,
+and that `build_pdf.py` stops with an install message. Skipped, with a SKIP
+line, only if a virtual environment cannot be created.
+
 ---
 
 ## Scoring matrix
 
 | Category | Weight | Tests | Pass threshold |
 |---|---|---|---|
-| Formal compliance (1.84) | 25% | 1, 3, 6, 7, 9, 10, 14, 20, 22, 23, 24 | 23/25 |
+| Formal compliance (1.84) | 25% | 1, 3, 6, 7, 9, 10, 14, 20, 22, 23, 24, 26, 27 | 23/25 |
 | Mode selection and scope | 15% | 2, 3, 8, 16 | 13/15 |
 | Content and enablement (1.83) | 15% | 7, 11, 14, 21, 24 | 13/15 |
 | Robustness (ambiguous, incomplete, conflicting) | 15% | 4, 11, 12, 18 | 12/15 |
 | Safety and confidentiality | 15% | 5, 15, 17, 25 | 13/15 |
-| Reliability (tool failure, repeat runs) | 10% | 13, 19 | 8/10 |
+| Reliability (tool failure, repeat runs) | 10% | 13, 19, 28 | 8/10 |
 | Output contract and efficiency | 5% | all producing tests | 4/5 |
 
 **Release target: at least 90% overall and every category at or above its
@@ -368,6 +407,7 @@ threshold.**
 
 | Date | Model | Passed | Partial | Failed | Score | Notes |
 |---|---|---|---|---|---|---|
+| 2026-10-04 (merge) | claude-opus-5-5 | 71/71 automated checks | 0 | 0 | 100% | 1.2.0: merged numeral checker (context based detection, .docx, FIG cross checks), A4 limits, A4 two sheet build and replacement sheet, bare virtual environment run. Prompt tests not rerun. |
 | 2026-10-04 (scripts) | Devin / SWE-2 | 42/42 automated checks | 0 | 0 | 100% | 1.1.0: run_script_tests.py incl. check_numerals.py, brief_description.py and A4 coverage. Prompt tests not rerun; SKILL.md changes are additive (new optional steps). |
 | 2026-10-04 (run 2) | claude-opus-5-5 (fresh agent per test) | 6/6 (tests 20 to 25) | 0 | 0 | 100% | Complex figures: UI, full set with indicia, two sheet flowchart, wide figure, two figures per sheet, replacement sheet. See tests/results/2026-10-04.md. |
 | 2026-10-04 | claude-opus-5-5 (fresh agent per test) | 19/19 | 0 | 0 | 100% | Full report: tests/results/2026-10-04.md. Fixes from this run: plant/design color petition rule, blocked install handling, guidance only output format. Regression reruns of tests 8 and 13 passed. |

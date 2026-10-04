@@ -4,6 +4,48 @@ All notable changes to the patent drawing skill. Versions follow semantic
 versioning: MAJOR for changes that alter outputs or required inputs, MINOR
 for new capabilities, PATCH for fixes and rule text corrections.
 
+## 1.2.0 (2026-10-04)
+
+Merges a second line of work into 1.1.0.
+
+### Added
+- Checkers need no installs: `check_drawing.py` falls back to an unmodified
+  copy of svgelements 1.9.6 (MIT license) bundled in `scripts/vendor/` when
+  svgelements is not installed, and measures text with a built in Helvetica
+  width table when reportlab is absent. Listed in NOTICE and SECURITY.md.
+  Only `build_pdf.py` needs packages.
+- `build_pdf.py` falls back to cairosvg (`--engine auto|svglib|cairosvg`)
+  when svglib or reportlab is missing, and otherwise stops with one clear
+  install message. `requirements.txt` comments say which script needs what.
+- Tests: numeral fixtures (`tests/fixtures/numerals/`: a matching Markdown
+  spec and mismatching .txt and .docx specs), A4 upright and sideways
+  fixtures at the documented A4 limits (`tests/fixtures/a4/`) with an A4 two
+  sheet build and an A4 replacement sheet, and a run in a bare virtual
+  environment proving the checkers need no packages; tests 26 to 28 in the
+  suite. 71 automated checks.
+
+### Changed
+- `check_numerals.py` keeps the 1.1.0 command line (`--spec` repeatable),
+  severities and `OVERALL: PASS/WARN/FAIL` line, with stronger detection:
+  reads .txt, .md and .docx specs (standard library only); finds numerals by
+  context (the word before the number, lists, ranges such as "302 through
+  310" and "202a-202c"); ignores claims, paragraph numbers, dates, years,
+  units, application and patent numbers and statute or rule citations ("35
+  U.S.C. 112", "37 CFR 1.84"); and cross checks FIG labels (a drawn figure
+  the spec never mentions, or a spec mention of a figure that is not drawn,
+  is a FAIL). Heuristics and limits are in the script docstring and
+  `references/compliance-checklist.md`.
+- Output contract: every delivery with figures includes a draft "BRIEF
+  DESCRIPTION OF THE DRAWINGS", produced with `brief_description.py` and
+  then filled in, marked for attorney review (example 1 in
+  `examples/conversations.md`). Numerals vs spec maps PASS, WARN and FAIL to
+  MATCHED, MATCHED with warnings and MISMATCH.
+- Error handling, tool failure example 5 and test 13: with no installs the
+  checkers still run and report their real results; only the PDF is NOT
+  BUILT.
+- `metadata.version` in SKILL.md is a quoted string, as the Agent Skills
+  specification's string to string map expects.
+
 ## 1.1.0 (2026-10-04)
 
 ### Added

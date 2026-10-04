@@ -3,7 +3,7 @@
 A Claude skill that drafts and checks USPTO patent drawings under 37 CFR
 1.84, and assembles them into a filing ready PDF.
 
-Version 1.1.0 · Apache License 2.0 · Author: Kevin Ringler
+Version 1.2.0 · Apache License 2.0 · Author: Kevin Ringler
 
 > Not legal advice. Have a registered patent attorney or agent review any
 > drawings before filing.
@@ -56,15 +56,22 @@ top). Pick one:
 
 ## Prerequisites
 
-* Python 3.9 or newer where Claude runs code, plus:
+* Python 3.9 or newer where Claude runs code.
+* **No installs needed for checking.** `scripts/check_drawing.py`,
+  `scripts/check_numerals.py` and `scripts/brief_description.py` run on the
+  Python standard library alone, even where `pip install` is unavailable
+  (such as some Claude.ai environments): svgelements is bundled in
+  `scripts/vendor/` (MIT license, see NOTICE) and an installed copy is used
+  instead when present.
+* **Only the PDF builder needs packages:**
   ```
   pip install -r scripts/requirements.txt
   ```
-  (svgelements, svglib, reportlab, pymupdf). Without these, Claude can still
-  draft SVGs but the automated compliance checks and PDF build are marked
-  NOT RUN. `check_numerals.py` and `brief_description.py` use only the
-  standard library and run even where `pip install` is unavailable, such as
-  some Claude.ai environments.
+  (svglib and reportlab; pymupdf is optional and adds PDF verification and
+  PNG previews; svgelements is listed but optional). If svglib or reportlab
+  cannot be installed, `build_pdf.py` uses cairosvg when it and the Cairo
+  library are present; otherwise the PDF is marked NOT BUILT and the SVG
+  sheets are still delivered and checked.
 * Optional: the **Patent Connector (USPTO)** extension, so Claude can pull
   your filed claims and specification by application number.
 
@@ -80,29 +87,33 @@ draws.
 2. Load the matching rule files.
 3. Draft each sheet as millimetre accurate SVG from a template.
 4. Run `scripts/check_drawing.py` and fix every failure; review previews by eye.
-5. If your written description is available as text, run
-   `scripts/check_numerals.py` to flag numerals that appear in only one.
+5. If your written description or claims are available (.txt, .md or
+   .docx), run `scripts/check_numerals.py` to cross check numerals and FIG
+   references between the drawings and the text.
 6. Run `scripts/build_pdf.py` to add sheet numbers, embed fonts and build the PDF.
 7. Deliver SVGs, PDF and a fixed format summary (figures, numerals, claim
-   coverage, check results, assumptions, open items). On request, draft the
-   Brief Description of the Drawings with `scripts/brief_description.py`.
+   coverage, check results, assumptions, a draft Brief Description of the
+   Drawings made with `scripts/brief_description.py`, open items).
 
 ## Outputs
 
 `fig-1.svg`, `fig-2.svg` ..., `drawings.pdf`, and a summary in the format in
-`references/output-contract.md`.
+`references/output-contract.md`, including a draft "BRIEF DESCRIPTION OF
+THE DRAWINGS" (one sentence per figure) for your attorney to review.
 
 ## Limitations
 
 * The search side of USPTO data (via the Patent Connector) covers titles and
   bibliographic fields, not full claim text.
-* The numeral comparison is text based: it flags numbers present in only one
-  side but cannot judge meaning. Whether lead lines cross, or whether a
-  claim step is truly shown, still needs review by eye.
+* The numeral comparison is text based and heuristic: `check_numerals.py`
+  matches numbers and FIG references between drawings and specification, not
+  what each numeral names (limits in `references/compliance-checklist.md`).
+  Whether lead lines cross, or whether a claim step is truly shown, still
+  needs review by eye.
 * Not suitable for filing quality design patent shading, true mechanical
   drafting, or plant photographs.
 * Rules and fees change. The reference files state the rules as understood
-  at version 1.1.0.
+  at version 1.2.0.
 
 ## Safety and privacy
 
@@ -128,7 +139,14 @@ draws.
   sideways sheet. With the claim flowchart they form one sequential six
   sheet set: `examples/example-set.pdf`.
 * `examples/conversations.md`: expected behavior for clear, ambiguous,
-  refused, conflicting, failing and changing requests.
+  refused, conflicting, failing and changing requests, including the draft
+  Brief Description of the Drawings.
+* `tests/fixtures/numerals/`: a specification that matches the six sheet
+  example set (`spec-match.md`) and one that does not (`spec-mismatch.txt`,
+  `.docx`). Try:
+  `python scripts/check_numerals.py --spec tests/fixtures/numerals/spec-match.md examples/fig-1-claim-flowchart.svg examples/*/fig-*.svg`
+* `tests/fixtures/a4/`: an upright and a sideways A4 sheet drawn at the
+  documented limits.
 
 ## Testing
 
@@ -136,8 +154,12 @@ draws.
 python tests/run_script_tests.py
 ```
 
-runs the automated script tests. `tests/TEST_SUITE.md` holds the prompt
-tests and scoring matrix; record each run in its results log.
+runs the automated script tests (checker, numeral checker, brief
+description, PDF builder, A4 sheets, and a standard library only run in a
+bare virtual environment that the runner creates for itself). Run it from the
+skill folder after installing to check the install; the PDF tests need the
+packages above. `tests/TEST_SUITE.md` holds the prompt tests and scoring
+matrix; record each run in its results log.
 
 ## Repository layout
 
@@ -145,7 +167,8 @@ tests and scoring matrix; record each run in its results log.
 SKILL.md                 Skill instructions (lean)
 references/              Rules, checklists, contracts, error handling
 scripts/                 check_drawing.py, check_numerals.py,
-                         brief_description.py, build_pdf.py, requirements.txt
+                         brief_description.py, build_pdf.py, requirements.txt,
+                         vendor/ (bundled svgelements)
 assets/                  Blank sheet templates, granted reference drawings
 examples/                Passing example figures, example conversations
 tests/                   Test suite, fixtures, script test runner
@@ -159,7 +182,8 @@ NOTICE                   Copyright and third party notices
 
 Copyright 2026 Kevin Ringler. Licensed under the Apache License, Version
 2.0; see LICENSE and NOTICE. The reference drawings are public domain U.S.
-patent publications.
+patent publications. The bundled copy of svgelements in `scripts/vendor/`
+is third party code under the MIT License (see its LICENSE file and NOTICE).
 
 ## Support
 

@@ -7,3 +7,11 @@ The reference drawings in assets/reference_drawings/ are reproductions of
 published United States patents (US 5,960,411; US 7,669,123; US 6,285,999).
 They are public domain U.S. government works and are not covered by the
 copyright or license above.
+
+Third party code
+
+scripts/vendor/svgelements/ is an unmodified copy of svgelements 1.9.6
+(https://github.com/meerk40t/svgelements), Copyright (c) 2019 meerk40t,
+licensed under the MIT License. The full license text is in
+scripts/vendor/svgelements/LICENSE. It is used by scripts/check_drawing.py
+only when svgelements is not installed.

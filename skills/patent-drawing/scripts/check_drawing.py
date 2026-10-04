@@ -24,7 +24,8 @@ What it checks (per sheet, and across the set):
     "Fig." / "Figure" variants. FIG numbers are sequential across the set.
   * No text touches or crosses a line: catches labels overflowing their
     boxes and lead lines drawn through text (37 CFR 1.84(p)(3)). Widths use
-    Helvetica metrics (Arial compatible) when reportlab is installed.
+    Helvetica metrics (Arial compatible): from reportlab when installed,
+    otherwise from a built in table of the same widths for ASCII text.
   * Text that looks like an excessive paragraph (over 40 characters) is
     flagged as a warning (37 CFR 1.84(o)).
   * A reference numeral inventory is printed so numerals can be cross
@@ -40,7 +41,10 @@ What it checks (per sheet, and across the set):
 
 Exit code 0 when every sheet passes, 1 when any check fails.
 
-Requires: svgelements  (pip install svgelements)
+Requires: svgelements (pip install svgelements). If it is not installed, the
+bundled copy in scripts/vendor/ is used, so the checker runs on the Python
+standard library alone. reportlab is optional: when present, text widths use
+its Helvetica metrics; otherwise a conservative per character estimate is used.
 """
 from __future__ import annotations
 
@@ -54,8 +58,19 @@ from pathlib import Path
 
 try:
     from svgelements import SVG, Shape, Text, Group, Image as SvgImage
-except ImportError:  # pragma: no cover
-    sys.exit("check_drawing.py needs svgelements: pip install svgelements")
+except ImportError:
+    # Restricted environments (for example a code sandbox where pip install is
+    # not possible) use the unmodified copy of svgelements 1.9.6 (MIT license)
+    # shipped in scripts/vendor/. An installed svgelements always wins.
+    _VENDOR = Path(__file__).resolve().parent / "vendor"
+    sys.path.insert(0, str(_VENDOR))
+    try:
+        from svgelements import SVG, Shape, Text, Group, Image as SvgImage
+    except ImportError:  # pragma: no cover
+        sys.exit("check_drawing.py needs svgelements: pip install svgelements "
+                 "(the bundled copy in scripts/vendor/ could not be loaded either)")
+    finally:
+        sys.path.remove(str(_VENDOR))
 
 SHEETS = {"letter": (216.0, 279.0), "a4": (210.0, 297.0)}
 MARGINS = {"top": 25.0, "left": 25.0, "right": 15.0, "bottom": 10.0}
@@ -215,16 +230,32 @@ try:  # Helvetica metrics match Arial closely; fall back to an estimate.
 except Exception:  # pragma: no cover
     _string_width = None
 
+# Fallback when reportlab is absent: standard Helvetica advance widths (Adobe
+# Core 14 font metrics, units of 1/1000 em) for printable ASCII 32 to 126, so
+# ASCII labels measure the same with or without reportlab. Any other character
+# is estimated at 0.667 em (an average capital), which errs on the wide side.
+_HELVETICA_ASCII = (
+    278, 278, 355, 556, 556, 889, 667, 191, 333, 333, 389, 584, 278, 333, 278, 278,
+    556, 556, 556, 556, 556, 556, 556, 556, 556, 556, 278, 278, 584, 584, 584, 556,
+    1015, 667, 667, 722, 722, 667, 611, 778, 722, 278, 500, 667, 556, 833, 722, 778,
+    667, 778, 722, 667, 611, 722, 667, 944, 667, 667, 611, 278, 278, 278, 469, 556,
+    333, 556, 556, 500, 556, 556, 278, 556, 556, 222, 222, 500, 222, 833, 556, 556,
+    556, 556, 333, 500, 278, 556, 500, 722, 500, 500, 500, 334, 260, 334, 584,
+)
+FALLBACK_EM = 0.667
+
 
 def text_width(s: str, fs: float) -> float:
     if _string_width is not None:
         return _string_width(s, "Helvetica", fs)
-    return max(len(s), 1) * 0.62 * fs
+    units = sum(_HELVETICA_ASCII[ord(ch) - 32] if 32 <= ord(ch) <= 126 else FALLBACK_EM * 1000
+                for ch in s)
+    return units / 1000.0 * fs
 
 
 def text_extent(t: Text, scale: float):
     """Approximate bbox (mm) for a text element at any rotation.
-    svgelements has no font metrics, so width is estimated at 0.6 em per char."""
+    svgelements has no font metrics, so width comes from text_width()."""
     try:
         m = t.transform
         a, b, c, d, e, f = m.a, m.b, m.c, m.d, m.e, m.f

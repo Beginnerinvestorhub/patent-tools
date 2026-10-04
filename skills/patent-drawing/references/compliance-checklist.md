@@ -4,9 +4,11 @@ Run every figure through this list before delivering. Report every item as
 Pass/Fail to the user — do not silently fix and hide failures found along
 the way, since the user should know what was close to a violation.
 
-**Automated first.** Run `python scripts/check_drawing.py` on the whole set.
-It covers the items marked (auto) below. Everything else needs a visual
-review of the rendered previews from `scripts/build_pdf.py --preview`.
+**Automated first.** Run `python scripts/check_drawing.py` on the whole set,
+and `python scripts/check_numerals.py --spec <spec>` when a specification is
+available. Neither needs any installs. They cover the items marked (auto)
+below. Everything else needs a visual review of the rendered previews from
+`scripts/build_pdf.py --preview`.
 
 ## Sheet-level
 
@@ -54,12 +56,18 @@ review of the rendered previews from `scripts/build_pdf.py --preview`.
 - [ ] Lead lines are short, don't cross each other, and terminate on the
       feature they identify
 - [ ] All text (including flowchart block labels) is in English
-- [ ] (auto, check_numerals.py) Every numeral used in the drawings appears in
-      the written description (ask the user for the spec text if not already
-      provided, and check)
+- [ ] (auto, check_numerals.py) Every numeral used in the drawings appears
+      in the written description (ask the user for the spec text if not
+      already provided, and check)
 - [ ] (auto, check_numerals.py) Every numeral used in the written description
       that refers to a drawn element appears in the drawings (the script
       warns on spec numerals not drawn; confirm each is intentional)
+- [ ] (auto, check_numerals.py) Every FIG label in the drawings is mentioned
+      in the specification, and every figure the specification mentions
+      exists. Run `python scripts/check_numerals.py --spec spec.docx fig-*.svg`
+      (.txt, .md or .docx; standard library only). Then confirm by eye that
+      each matched numeral names the same part in both: the script matches
+      numbers, not meanings
 
 ## Content and enablement (see also content-and-enablement.md)
 
@@ -99,3 +107,35 @@ FIG. N — <short description>
 
 If everything passes, say so plainly and note this is still not a substitute
 for a final human/attorney review before filing.
+
+## Limits of check_numerals.py
+
+Severity: FAIL (exit 1) for a drawing numeral the specification never uses,
+a FIG label the specification never mentions, a figure the specification
+mentions that is not drawn, or an unreadable or unsafe file. WARN (exit 0)
+for a numeral the specification uses that no drawing shows, since it may be
+an element the user chose not to draw. The last line is `OVERALL: PASS`,
+`OVERALL: WARN` or `OVERALL: FAIL`.
+
+It is a heuristic. It treats a 2 to 4 digit number (optionally with one
+lowercase letter, "202a") directly after a word ("server 110", "ship the
+order (314)") as a numeral, plus lists and ranges that continue it
+("elements 102, 104 and 106", "steps 302 through 310", "sensors
+202a-202c"). A drawing numeral inside such a range counts as described
+(same hundred series, or same base numeral for letters). It ignores claim
+and paragraph references ("claims 2 to 4", "[0031]"), figure numbers, dates,
+4 digit years that no drawing uses, patent and application numbers
+("16/123,456", "7,669,123"), statute, rule and manual citations ("35 U.S.C.
+112", "37 CFR 1.84", "MPEP 608.02", "Rule 84", "§ 112"; Rule, Article and
+Title only when capitalized, so "a rule 214" still counts), decimals, numbers
+with units ("120 mm", "250 ms", "50 %"), and numbers after quantity words
+("about 250", "at least 100"). A FIG mention of a whole figure ("FIG. 3")
+covers its partial views (FIG. 3A, FIG. 3B); "FIGS. 3A to 3C" covers 3A,
+3B and 3C. The specification may be .txt, .md or .docx (read with the
+standard library only); for a PDF, ask the user for one of these.
+
+It can still miss a numeral written in an unusual way (a number after a
+quantity word or preposition, such as "data goes to 110"), or flag a plain
+count written right after a noun ("a buffer 64 entries deep"). It matches
+numbers, not meanings. Report what it finds, then check any surprising
+result against the text before asking the user.

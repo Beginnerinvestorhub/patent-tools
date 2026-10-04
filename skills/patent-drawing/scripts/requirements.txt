@@ -1,7 +1,16 @@
 # Minimum versions are the ones the scripts were tested with (Windows and Linux).
-# check_drawing.py
+#
+# No installs are needed for the checkers:
+#   check_drawing.py and check_numerals.py run on the Python standard library
+#   alone. check_drawing.py uses an installed svgelements when present and
+#   otherwise the unmodified copy of svgelements 1.9.6 (MIT license) bundled
+#   in scripts/vendor/. Installing it below is optional.
 svgelements>=1.9.6
-# build_pdf.py (svglib 2.x provides the font registration API used here)
+# build_pdf.py is the only script that needs packages. svglib 2.x provides the
+# font registration API used here; reportlab also gives check_drawing.py its
+# Helvetica text widths (a built in table of the same widths is used without it).
+# If svglib or reportlab is missing, build_pdf.py falls back to cairosvg when
+# that and the Cairo library are installed (pip install cairosvg).
 svglib>=2.2
 reportlab>=5.0
 # optional: PDF verification and PNG previews in build_pdf.py

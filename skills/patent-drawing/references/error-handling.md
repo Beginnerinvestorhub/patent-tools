@@ -20,11 +20,16 @@ check as passed if it did not run, and never fill a gap by guessing.
 | Situation | Do this |
 |---|---|
 | Python not available | Say so. Deliver SVG sheets only, run the manual checklist by hand, and mark every automated item as NOT RUN in the summary. Do not claim PASS. |
-| `pip install` fails (no network, permissions, index blocked) | Try the documented command once. Do not work around the failure (no bootstrapping pip, alternate indexes, downloading wheels or editing config). Show the error in one line, give the install command for the user to run, deliver SVGs, mark checks NOT RUN. |
-| `svgelements` missing | `check_drawing.py` exits with an install hint. Treat as NOT RUN, as above. |
-| `svglib` or `reportlab` missing | `build_pdf.py` exits with an install hint. Deliver SVGs; PDF is NOT BUILT. |
+| `pip install` fails (no network, permissions, index blocked) | Try the documented command once. Do not work around the failure (no bootstrapping pip, alternate indexes, downloading wheels or editing config). The checkers need no installs, so still run `check_drawing.py`, `check_numerals.py` and `brief_description.py` and report their real results. Show the install error in one line, give the install command for the user to run, deliver SVGs, mark only the PDF as NOT BUILT. |
+| `svgelements` missing | Nothing to do: `check_drawing.py` uses the copy bundled in `scripts/vendor/`. `check_numerals.py` needs only the standard library. Both run with no installs. If the checker still cannot import it (bundled folder deleted), it exits with an install hint; treat as NOT RUN. |
+| `reportlab` missing when checking | The checker measures text with a built in table of the same Helvetica widths, so results are the same for ASCII labels; nothing to report. |
+| `svglib` or `reportlab` missing | `build_pdf.py` is the only script that needs packages. It falls back to cairosvg when cairosvg and the Cairo library are installed (fonts then come from the system; say so). With neither engine it exits with an install message (`pip install svglib reportlab`). Deliver SVGs; PDF is NOT BUILT. |
 | `pymupdf` missing | PDF still builds; verification and previews are skipped. Say "PDF built, font embedding and page size not verified, previews not generated" and do the visual review from the SVGs instead. |
 | No TrueType font found | Ask the user for a font path (`--font`). Do not build with an unembedded font. |
+| No specification provided | Do not run `check_numerals.py`. Summary shows `Numerals vs spec: NOT CHECKED (no specification provided)`. |
+| `check_numerals.py` reports OVERALL: FAIL | Show each FAIL to the user (numeral drawn but never described, figure drawn but never mentioned, figure mentioned but not drawn) and ask which side is right (drawing or specification). Never renumber or rename to force a match, and never edit the user's specification. |
+| `check_numerals.py` reports OVERALL: WARN | Spec numerals no drawing shows. List them and ask the user to confirm each was meant to stay undrawn; the summary shows MATCHED with warnings. |
+| Specification is a PDF or other format | Ask the user for a .txt, .md or .docx copy (or save text the user pasted as .txt), then run `check_numerals.py`. |
 | Checker reports FAIL | Fix and rerun. Report every failure found, including ones fixed, in the summary. |
 | Checker FAIL cannot be fixed without changing what the figure shows | Stop and ask the user which content to change. |
 | Patent Connector tools not installed | Ask the user to paste the claims. Never invent tool names or arguments. |

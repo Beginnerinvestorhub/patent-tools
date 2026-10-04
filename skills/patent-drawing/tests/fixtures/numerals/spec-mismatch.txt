@@ -1,0 +1,14 @@
+BRIEF DESCRIPTION OF THE DRAWINGS
+
+FIG. 1 is a flowchart of a method of generating an alert from sensor data.
+FIGS. 3A to 3C together are a flowchart of an order fulfillment method.
+FIG. 6 shows a settings screen.
+
+DETAILED DESCRIPTION
+
+Referring to FIG. 1, at step 102 the method receives sensor data. At step 104
+the data is filtered. Decision 106 compares each value with a limit. Step 108
+generates an alert, which a server 120 forwards to a phone 122.
+
+In FIG. 3A, steps 302, 304, 306, 308 and 310 receive, verify, reserve, pick
+and pack an order. Filed 2026-10-04; see claim 7 and [0042].

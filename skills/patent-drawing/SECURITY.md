@@ -17,5 +17,11 @@ You can expect an acknowledgement within 7 days.
 * SVG files containing DOCTYPE or ENTITY declarations, scripts, embedded or
   linked images, or links to other files are refused before parsing, which
   blocks entity expansion attacks and local file inclusion.
+* Third party code: `scripts/vendor/svgelements/` is an unmodified copy of
+  svgelements 1.9.6 (MIT license, see NOTICE), used only when svgelements is
+  not installed. It is updated by replacing the whole folder with a newer
+  release, never by local edits. An installed svgelements always takes
+  precedence, so keep any installed copy up to date as well. Report a flaw
+  in svgelements itself to its upstream project too.
 * SKILL.md instructs Claude to treat inventions as confidential and never to
   send invention details to outside services without explicit permission.

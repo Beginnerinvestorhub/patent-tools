@@ -6,14 +6,14 @@ description: >
   design, plant and PCT/EPO guidance.
 license: Apache-2.0
 metadata:
-  version: 1.1.0
+  version: "1.2.0"
   author: Kevin Ringler
 ---
 
 # Patent Drawing Creator
 
 Produces USPTO compliant patent drawings and checks existing figures.
-Strongest for software and architecture inventions. Version 1.1.0; see
+Strongest for software and architecture inventions. Version 1.2.0; see
 CHANGELOG.md.
 
 ## When to use, and when not to
@@ -154,18 +154,20 @@ and sequence, and lists every numeral. Use `--partial` when checking only
 some sheets of a set (replacement sheets). Fix every FAIL and rerun until
 OVERALL: PASS. Review every WARN.
 
-When the written description (or claims) is available as text, also run:
+When the user gave the written description or claims (.txt, .md or .docx),
+also run (repeat `--spec` for a separate claims file):
 
 ```bash
-python scripts/check_numerals.py --spec spec.txt fig-1.svg fig-2.svg
+python scripts/check_numerals.py --spec spec.docx fig-1.svg fig-2.svg
 ```
 
-It flags every drawing numeral missing from the spec (FAIL) and every spec
-numeral not drawn (WARN). Fix FAILs, or ask the user before dropping a
-numeral. `check_numerals.py` needs no packages and runs where `pip install`
-is blocked. Then do what a script cannot: view each preview page (step 5)
-for lead lines crossing each other, wrong arrows and crowding, and run the
-manual items in
+It FAILs on drawing numerals the spec never uses, FIG labels the spec never
+mentions and figures the spec mentions that do not exist, and WARNs on spec
+numerals no drawing shows. Fix FAILs or ask the user which side is right;
+never renumber to force a match or edit the user's spec. Both checkers need
+no installs (svgelements is bundled in `scripts/vendor/`). Then do what a
+script cannot: view each preview page (step 5) for lead lines crossing each
+other, wrong arrows and crowding, and run the manual items in
 [compliance-checklist.md](references/compliance-checklist.md) (claim
 coverage, flowchart versus claim steps).
 
@@ -176,18 +178,17 @@ python scripts/build_pdf.py fig-1.svg fig-2.svg fig-3.svg -o drawings.pdf --prev
 ```
 
 Adds sheet numbers, renders exact page size vector pages, embeds the font,
-verifies the PDF and writes PNG previews. Setup:
-`pip install -r scripts/requirements.txt`.
+verifies the PDF and writes PNG previews. This is the only script that needs
+packages: `pip install -r scripts/requirements.txt`.
 
 ### 6. Deliver
 
 Use the exact summary format in
 [references/output-contract.md](references/output-contract.md).
-
-If the user is preparing a specification too, offer the Brief Description
-of the Drawings: `python scripts/brief_description.py` on the sheets prints
-one correctly grouped sentence per figure (it also needs no packages); fill
-each placeholder with what the figure shows in the spec's own terms.
+It includes a draft BRIEF DESCRIPTION OF THE DRAWINGS for the user's
+attorney to review: run `python scripts/brief_description.py` on the sheets
+in sheet order (no packages needed), then fill each placeholder with what the
+figure shows in the spec's own terms.
 
 ## When something goes wrong
 
