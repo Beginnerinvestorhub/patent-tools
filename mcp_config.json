@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "patent-connector": {
+      "command": "node",
+      "args": [
+        "${PLUGIN_ROOT}/connector/index.js"
+      ],
+      "cwd": "${PLUGIN_ROOT}",
+      "env": {
+        "USPTO_ODP_API_KEY": "${USPTO_ODP_API_KEY}"
+      }
+    }
+  }
+}
