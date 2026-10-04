@@ -6,14 +6,14 @@ description: >
   design, plant and PCT/EPO guidance.
 license: Apache-2.0
 metadata:
-  version: "1.2.0"
+  version: "1.2.1"
   author: Kevin Ringler
 ---
 
 # Patent Drawing Creator
 
 Produces USPTO compliant patent drawings and checks existing figures.
-Strongest for software and architecture inventions. Version 1.2.0; see
+Strongest for software and architecture inventions. Version 1.2.1; see
 CHANGELOG.md.
 
 ## When to use, and when not to
@@ -95,8 +95,9 @@ NO → UTILITY MODE (default)
 Ask all missing questions in one message. For a bare request such as "draw
 my invention", ask before drawing anything.
 
-If the user's application number is known and the Patent Connector is
-installed, the claims can be fetched instead of asked for. Follow
+If the user's application or patent number is known and the Patent
+Connector is installed, the claims can be fetched instead of asked for, and
+filed or prior art drawings can be viewed. Follow
 [references/patent-connector-tools.md](references/patent-connector-tools.md).
 
 ### 2. Load the rules

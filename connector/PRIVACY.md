@@ -9,7 +9,8 @@ Patent Connector runs entirely on your own computer. It has no servers, collects
 ## What the extension handles
 
 * **Your USPTO API key.** You enter it in Claude Desktop, which saves it in the extension's settings on your computer. How it is protected on disk is up to Claude Desktop, and it may be readable by other software running under your user account. The extension reads the key only to authenticate requests to USPTO, sends it only over HTTPS to uspto.gov addresses, never forwards it when a download is redirected elsewhere, and never includes it in any result shown to Claude. The key is free and you can revoke or regenerate it at any time in My ODP at data.uspto.gov.
-* **Your search terms and application numbers.** These come from your conversation with Claude and are sent to USPTO to answer your request.
+* **Your search terms, application numbers and patent numbers.** These come from your conversation with Claude and are sent to USPTO to answer your request. A patent number is sent to USPTO as a search to find its application.
+* **Documents from USPTO.** Document text and drawings PDFs are downloaded from USPTO and processed in memory to produce the text or images returned to Claude. Nothing is saved to disk.
 
 ## Where data goes
 

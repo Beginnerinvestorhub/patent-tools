@@ -17,7 +17,8 @@
     "test:retry": "node test/retry.mjs",
     "test:features": "node test/features.mjs",
     "test:offline": "node test/security.mjs && node test/retry.mjs && node test/features.mjs",
-    "test:bundle": "node test/security.mjs --bundle && node test/retry.mjs --bundle && node test/features.mjs --bundle"
+    "test:bundle": "node test/security.mjs --bundle && node test/retry.mjs --bundle && node test/features.mjs --bundle",
+    "check:bundle": "node scripts/check-bundle.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0"

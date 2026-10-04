@@ -19,6 +19,12 @@ You can expect an acknowledgement within 7 days.
 * All tools are read only. The extension writes no files and runs no shell
   commands.
 * Responses are capped at 25 MB; inputs are validated before any request.
+* `get_drawings` parses PDFs from USPTO with a small reader in `lib/pdf.js`
+  that treats every file as untrusted: at most 50 MB decompressed per image,
+  20000 pixels per side, 2000 pages, bounded nesting, reference chains and
+  content stream size, and every parse problem becomes a plain English
+  message. PDFs and images are processed in memory only and never written
+  to disk. `test/features.mjs` covers these limits.
 * The plugin runs `dist/patent-connector.mjs`, a bundle of `index.js` and
   the exact dependency versions in `package-lock.json`, built with a pinned
   esbuild version (`npm run build`). It contains no API key or other secret;

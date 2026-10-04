@@ -2,6 +2,64 @@
 
 Versions follow semantic versioning.
 
+## 1.3.0 (2026-10-04)
+
+### Added
+- Patent number lookup. `get_patent`, `get_patent_documents` and
+  `get_document_text` accept `patentNumber` as an alternative to
+  `applicationNumber`, written as `12399789`, `12,399,789`, `US12399789` or
+  `US 12,399,789 B1`. The number is resolved with the ODP search on
+  `applicationMetaData.patentNumber`, and each result names the application
+  it resolved to. Design, reissue, plant and H numbers (`D987,654`,
+  `RE49,123`) are tried as written and then zero padded to 8 characters
+  (`D0987654`); if neither form is stored, a plain English error suggests
+  `search_patents`. Giving both numbers, neither, or a malformed number is
+  refused before any request is made, with a plain English message.
+- New tool `get_drawings` ("View patent drawings"). Downloads the most
+  recent drawings document (DRW or DRW.NONBW), or the one named by
+  `documentId`, and returns a short summary plus one PNG image per page.
+  `pages` takes `"2"`, `"1-3"` or `"2,4"` (default the first 3 pages, at most
+  5 per call); `maxDimension` sets the longest side (600 to 2400 pixels,
+  default 1600). The PDF goes through the same request path as every other
+  download: the key only over HTTPS to uspto.gov, manual redirects, the 25 MB
+  cap and retries.
+- `lib/pdf.js`, a small dependency free PDF reader for scanned drawing
+  sheets: classic cross reference tables, cross reference streams and object
+  streams, damaged file recovery by rescanning, page tree order, inherited
+  resources and rotation, image placement matrices, Flate (with PNG and TIFF
+  predictors), LZW, ASCIIHex, ASCII85 and RunLength filters, 1 to 16 bit
+  gray, RGB, CMYK, ICC based, indexed and separation images, `/Decode`
+  arrays and image masks. Pages compressed with CCITT fax, JBIG2, JPEG or
+  JPEG 2000 are reported as not supported (with the page count) instead of
+  failing the call. Limits guard against hostile files: 50 MB decompressed
+  per image, 20000 pixels per side, 2000 pages, nesting and reference chain
+  depth, and content stream size.
+- `lib/raster.js`: area averaging downscale (thin lines in 1 bit scans
+  survive as gray), page orientation, and a PNG encoder on Node's zlib that
+  stores pure black and white images at 1 bit per pixel. A drawing sheet at
+  the default size is typically 20 to 80 KB.
+- Offline feature tests `test/features.mjs` (`npm run test:features`, also
+  part of `test:offline` and `test:bundle`), using a real published USPTO
+  drawings PDF as a fixture and small generated PDFs for the harder cases.
+- Live smoke test checks for patent number lookup and `get_drawings`.
+- `scripts/check-bundle.mjs` (`npm run check:bundle`) starts the bundle with
+  plain JSON RPC and checks it lists all 5 read only tools and explains a
+  missing key, without network or `node_modules`.
+- GitHub Actions CI (`.github/workflows/ci.yml`): on Node 20 and 22 runs
+  the offline suites against `index.js` and the bundle, checks that the
+  committed bundle matches a fresh build, and runs `check-bundle.mjs` on a
+  copy of the bundle with no `node_modules`; on Python 3.11 and 3.12 runs
+  the Patent Drawing skill's script tests. No secrets are used.
+
+### Changed
+- The "No USPTO API key is configured" and "rejected the API key" messages
+  now name both places the key can live: the extension settings in Claude
+  Desktop, or the `USPTO_ODP_API_KEY` environment variable for the plugin.
+- README: a step by step "Set your USPTO API key" section for Windows,
+  macOS and Linux, with how to check the variable is set.
+- The application number error now points to `patentNumber` for granted
+  patents, and `get_document_text` points to `get_drawings` for drawings.
+
 ## 1.2.0 (2026-10-04)
 
 ### Added

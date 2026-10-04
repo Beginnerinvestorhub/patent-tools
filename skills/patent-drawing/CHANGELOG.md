@@ -4,6 +4,17 @@ All notable changes to the patent drawing skill. Versions follow semantic
 versioning: MAJOR for changes that alter outputs or required inputs, MINOR
 for new capabilities, PATCH for fixes and rule text corrections.
 
+## 1.2.1 (2026-10-04)
+
+### Changed
+- `references/patent-connector-tools.md` covers Patent Connector 1.3.0:
+  every per application tool accepts `patentNumber` as well as
+  `applicationNumber`, and the new `get_drawings` tool lets the skill look at
+  prior art drawings and the user's own filed drawings as images. Adds
+  guidance for using prior art figures without copying them; the
+  confidentiality rules are unchanged (only numbers are sent to USPTO).
+  No script or rule changes.
+
 ## 1.2.0 (2026-10-04)
 
 Merges a second line of work into 1.1.0.
