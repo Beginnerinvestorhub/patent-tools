@@ -27,7 +27,7 @@ plugin 1.2.0.
 
 Pick the channel you use:
 
-* **Claude Desktop.** Double-click `patent-connector-1.3.0.mcpb` (or drag it
+* **Claude Desktop.** Double click `patent-connector-1.3.0.mcpb` (or drag it
   into **Settings > Extensions**). See
   [connector/README.md](connector/README.md) for setup and your API key.
 * **Claude.ai.** Zip the `skills/patent-drawing` folder and upload it under
