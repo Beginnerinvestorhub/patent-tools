@@ -70,6 +70,19 @@ jobs:
           cp dist/patent-connector.mjs "$RUNNER_TEMP/bare/"
           node scripts/check-bundle.mjs "$RUNNER_TEMP/bare/patent-connector.mjs"
 
+      - name: Desktop extension (.mcpb) validates, packs and starts
+        # Packs index.js, lib/ and node_modules as Claude Desktop installs
+        # them, then starts the unpacked index.js and lists the tools.
+        run: |
+          npx -y @anthropic-ai/mcpb@2.1.2 validate manifest.json
+          npx -y @anthropic-ai/mcpb@2.1.2 pack . "$RUNNER_TEMP/patent-connector.mcpb"
+          mkdir -p "$RUNNER_TEMP/mcpb"
+          unzip -q "$RUNNER_TEMP/patent-connector.mcpb" -d "$RUNNER_TEMP/mcpb"
+          for f in test dist docs scripts .env; do
+            if [ -e "$RUNNER_TEMP/mcpb/$f" ]; then echo "$f must not be packed"; exit 1; fi
+          done
+          node scripts/check-bundle.mjs "$RUNNER_TEMP/mcpb/index.js"
+
   skill:
     name: Patent Drawing skill (Python ${{ matrix.python }})
     runs-on: ubuntu-latest

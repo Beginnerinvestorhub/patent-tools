@@ -49,7 +49,17 @@ Versions follow semantic versioning.
   the offline suites against `index.js` and the bundle, checks that the
   committed bundle matches a fresh build, and runs `check-bundle.mjs` on a
   copy of the bundle with no `node_modules`; on Python 3.11 and 3.12 runs
-  the Patent Drawing skill's script tests. No secrets are used.
+  the Patent Drawing skill's script tests. It also validates and packs the
+  `.mcpb` desktop extension and starts the unpacked `index.js`. No secrets
+  are used.
+
+### Fixed
+- The desktop extension package left out parts of its own dependencies:
+  `.mcpbignore` patterns such as `dist/` and `test/` also matched folders
+  inside `node_modules` (including `@modelcontextprotocol/sdk/dist/`), so
+  the packed `index.js` could not start. The patterns are now anchored to
+  the connector folder (`/dist/`, `/test/` and so on). CI now packs the
+  extension, unpacks it and checks that it starts and lists all tools.
 
 ### Changed
 - The "No USPTO API key is configured" and "rejected the API key" messages
