@@ -3,3 +3,8 @@ node_modules/
 __pycache__/
 .DS_Store
 Thumbs.db
+
+# local secrets
+.env
+.env.*
+!.env.example
