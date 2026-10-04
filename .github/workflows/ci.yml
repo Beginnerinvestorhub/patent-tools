@@ -1,0 +1,96 @@
+# Copyright 2026 Kevin Ringler
+# SPDX-License-Identifier: Apache-2.0
+#
+# Offline checks for every push and pull request to main. No secrets are
+# used: the live USPTO smoke test (connector/test/smoke.mjs) needs an API key
+# and runs only on a developer's computer, for example
+#   cd connector && node --env-file=../.env test/smoke.mjs
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  connector:
+    name: Patent Connector (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ["20.x", "22.x"]
+    defaults:
+      run:
+        working-directory: connector
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+          cache-dependency-path: connector/package-lock.json
+
+      - name: Install exact dependencies
+        run: npm ci
+
+      - name: Syntax check sources
+        run: |
+          for f in index.js lib/*.js scripts/*.mjs test/*.mjs dist/patent-connector.mjs; do
+            echo "node --check $f"
+            node --check "$f"
+          done
+
+      - name: Offline tests against index.js (security, retry, features)
+        run: npm run test:offline
+
+      - name: Offline tests against the committed bundle
+        run: npm run test:bundle
+
+      - name: Committed bundle is up to date
+        # The build pins esbuild and uses the exact versions in
+        # package-lock.json, and its output was checked to be byte for byte
+        # identical across clean installs, so any difference here means
+        # dist/ was not rebuilt after a change to index.js, lib/ or the
+        # dependencies. Fix: npm ci && npm run build, then commit dist/.
+        run: |
+          npm run build
+          git status --porcelain -- dist/
+          git diff --stat --exit-code -- dist/
+          test -z "$(git status --porcelain -- dist/)"
+
+      - name: Bundle starts without node_modules and lists all tools
+        run: |
+          mkdir -p "$RUNNER_TEMP/bare"
+          cp dist/patent-connector.mjs "$RUNNER_TEMP/bare/"
+          node scripts/check-bundle.mjs "$RUNNER_TEMP/bare/patent-connector.mjs"
+
+  skill:
+    name: Patent Drawing skill (Python ${{ matrix.python }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.11", "3.12"]
+    defaults:
+      run:
+        working-directory: skills/patent-drawing
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: skills/patent-drawing/scripts/requirements.txt
+
+      - name: Install script requirements
+        run: pip install -r scripts/requirements.txt
+
+      - name: Script tests
+        run: python tests/run_script_tests.py
