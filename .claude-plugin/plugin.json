@@ -6,10 +6,7 @@
     "name": "Kevin Ringler",
     "url": "https://github.com/Beginnerinvestorhub"
   },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Beginnerinvestorhub/patent-tools"
-  },
+  "repository": "https://github.com/Beginnerinvestorhub/patent-tools",
   "homepage": "https://github.com/Beginnerinvestorhub/patent-tools",
   "license": "Apache-2.0",
   "keywords": [
