@@ -1,6 +1,6 @@
 {
   "name": "patent-connector",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "MCP server for the USPTO Open Data Portal: search patents and read claims, abstracts and specifications with your own API key.",
   "main": "index.js",
   "type": "module",
@@ -11,8 +11,12 @@
   },
   "scripts": {
     "test": "node test/smoke.mjs",
-    "pack": "npx -y @anthropic-ai/mcpb pack . ../patent-connector-1.1.1.mcpb",
-    "test:security": "node test/security.mjs"
+    "build": "npx -y esbuild@0.25.10 index.js --bundle --platform=node --format=esm --target=node18 --preserve-symlinks --legal-comments=eof --outfile=dist/patent-connector.mjs --metafile=dist/meta.json \"--banner:js=import { createRequire as __pcRequire } from 'node:module'; const require = __pcRequire(import.meta.url); // Patent Connector bundle built from index.js by npm run build (do not edit). index.js: Copyright 2026 Kevin Ringler, SPDX-License-Identifier: Apache-2.0. Bundled packages keep their own licenses: see THIRD_PARTY_NOTICES.txt.\" && node scripts/third-party-notices.mjs dist/meta.json",
+    "pack": "npx -y @anthropic-ai/mcpb pack . ../patent-connector-1.2.0.mcpb",
+    "test:security": "node test/security.mjs",
+    "test:retry": "node test/retry.mjs",
+    "test:offline": "node test/security.mjs && node test/retry.mjs",
+    "test:bundle": "node test/security.mjs --bundle && node test/retry.mjs --bundle"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0"

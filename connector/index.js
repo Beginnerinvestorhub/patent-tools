@@ -12,7 +12,7 @@ import {
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 
-const VERSION = "1.1.1";
+const VERSION = "1.2.0";
 const API_KEY = (process.env.USPTO_ODP_API_KEY || "").trim();
 const BASE_URL = "https://api.uspto.gov/api/v1";
 const TIMEOUT_MS = 30000;
@@ -51,6 +51,28 @@ function explainHttpError(status, bodyText, notFoundMessage) {
 const MAX_REDIRECTS = 5;
 const MAX_BYTES = 25 * 1024 * 1024; // cap any single response at 25 MB
 
+// Polite retry for transient USPTO errors: rate limiting (429) and gateway
+// or availability errors (502, 503, 504). At most 2 retries after the first
+// attempt. A numeric Retry-After header is honored, capped at 10 seconds;
+// otherwise the waits are 1 s and then 3 s. No other 4xx is ever retried.
+const RETRY_STATUSES = new Set([429, 502, 503, 504]);
+const RETRY_DELAYS_MS = [1000, 3000];
+const RETRY_AFTER_CAP_MS = 10000;
+// Test only knob: scales every wait (0 makes the offline tests instant).
+const RETRY_SCALE = (() => {
+  const n = Number(process.env.PATENT_CONNECTOR_RETRY_SCALE);
+  return Number.isFinite(n) && n >= 0 && n <= 1 ? n : 1;
+})();
+
+function retryDelayMs(res, attempt) {
+  const header = (res.headers.get("retry-after") || "").trim();
+  let ms = RETRY_DELAYS_MS[Math.min(attempt, RETRY_DELAYS_MS.length - 1)];
+  if (/^\d+(\.\d+)?$/.test(header)) ms = Math.min(Number(header) * 1000, RETRY_AFTER_CAP_MS);
+  return ms * RETRY_SCALE;
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 function isUsptoHttps(u) {
   return u.protocol === "https:" && (u.hostname === "uspto.gov" || u.hostname.endsWith(".uspto.gov"));
 }
@@ -71,19 +93,25 @@ async function request(url, init = {}, notFoundMessage) {
   for (let hop = 0; ; hop++) {
     const headers = { ...(init.headers || {}) };
     if (isUsptoHttps(target)) Object.assign(headers, authHeaders());
-    try {
-      res = await fetch(target, {
-        method,
-        body,
-        headers,
-        redirect: "manual",
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      });
-    } catch (err) {
-      if (err instanceof UserError) throw err;
-      if (err?.name === "TimeoutError")
-        throw new UserError("USPTO did not respond within " + TIMEOUT_MS / 1000 + " seconds. Try again.");
-      throw new UserError("Could not reach USPTO: " + err.message);
+    for (let attempt = 0; ; attempt++) {
+      try {
+        res = await fetch(target, {
+          method,
+          body,
+          headers,
+          redirect: "manual",
+          signal: AbortSignal.timeout(TIMEOUT_MS),
+        });
+      } catch (err) {
+        if (err instanceof UserError) throw err;
+        if (err?.name === "TimeoutError")
+          throw new UserError("USPTO did not respond within " + TIMEOUT_MS / 1000 + " seconds. Try again.");
+        throw new UserError("Could not reach USPTO: " + err.message);
+      }
+      if (!RETRY_STATUSES.has(res.status) || attempt >= RETRY_DELAYS_MS.length) break;
+      const wait = retryDelayMs(res, attempt);
+      await res.body?.cancel().catch(() => {});
+      await sleep(wait);
     }
     if (![301, 302, 303, 307, 308].includes(res.status)) break;
     const location = res.headers.get("location");

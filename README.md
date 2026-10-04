@@ -9,6 +9,9 @@ patent drawings.
 
 ## What's inside
 
+Versions: Patent Connector (USPTO) 1.2.0, Patent Drawing skill 1.2.0,
+plugin 1.1.0.
+
 | Component | What it is |
 |---|---|
 | [`connector/`](connector/) | **Patent Connector (USPTO)** — an MCP server / Claude Desktop extension. Search USPTO patents and applications and read the actual text of claims, abstracts and specifications, using your own free USPTO API key. |
@@ -18,7 +21,7 @@ patent drawings.
 
 Pick the channel you use:
 
-* **Claude Desktop.** Double-click `patent-connector-1.1.1.mcpb` (or drag it
+* **Claude Desktop.** Double-click `patent-connector-1.2.0.mcpb` (or drag it
   into **Settings > Extensions**). See
   [connector/README.md](connector/README.md) for setup and your API key.
 * **Claude.ai.** Zip the `skills/patent-drawing` folder and upload it under
@@ -28,7 +31,11 @@ Pick the channel you use:
   (all projects) or `.claude/skills/` (one project). Or install the whole
   repo as a plugin — the `.claude-plugin/` manifest also wires up the
   Patent Connector MCP server (requires `node` and a `USPTO_ODP_API_KEY`
-  environment variable).
+  environment variable). The plugin starts the committed single file
+  bundle `connector/dist/patent-connector.mjs`, which already contains every
+  dependency, so no `npm install` is needed. Set `USPTO_ODP_API_KEY` in the
+  environment that starts Claude Code (for example in your shell profile);
+  the plugin has no settings screen for it.
 * **Devin CLI / Desktop / cloud.** `devin plugins install
   Beginnerinvestorhub/patent-tools`. Installs the skill and the connector
   MCP server together.
@@ -39,6 +46,7 @@ Pick the channel you use:
 .claude-plugin/plugin.json   Plugin manifest (works in Devin and Claude Code)
 .mcp.json                    Plugin-provided Patent Connector MCP server
 connector/                   Patent Connector (USPTO) MCP server + .mcpb source
+connector/dist/              Single file bundle the plugin runs (npm run build)
 skills/patent-drawing/       Patent Drawing skill (self-contained; zip this
                              folder for Claude.ai or copy it for Claude Code)
 ```
@@ -53,12 +61,19 @@ cd connector
 npm install
 USPTO_ODP_API_KEY=your_key npm test   # live test suite (needs a free key)
 node test/security.mjs                # offline security tests
-npm run pack                          # rebuilds ../patent-connector-1.1.1.mcpb
+node test/retry.mjs                   # offline retry tests
+npm run build                         # rebuilds dist/patent-connector.mjs
+npm run test:bundle                   # offline tests against the bundle
+npm run pack                          # rebuilds ../patent-connector-1.2.0.mcpb
 
-cd skills/patent-drawing
-pip install -r scripts/requirements.txt
+cd ../skills/patent-drawing
+pip install -r scripts/requirements.txt   # only the PDF builder needs packages
 python tests/run_script_tests.py      # automated script tests
 ```
+
+Rebuild and commit `connector/dist/patent-connector.mjs` whenever
+`connector/index.js` or its dependencies change; the plugin runs the bundle,
+not `index.js`. See [connector/README.md](connector/README.md#the-plugin-bundle).
 
 ## Security and privacy
 

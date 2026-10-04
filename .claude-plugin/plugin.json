@@ -1,6 +1,6 @@
 {
   "name": "patent-tools",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "USPTO patent drawing skill plus live USPTO patent search and document reading via the Patent Connector MCP server.",
   "author": {
     "name": "Kevin Ringler",

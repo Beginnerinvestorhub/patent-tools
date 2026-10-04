@@ -3,7 +3,7 @@
     "patent-connector": {
       "command": "node",
       "args": [
-        "${PLUGIN_ROOT}/connector/index.js"
+        "${PLUGIN_ROOT}/connector/dist/patent-connector.mjs"
       ],
       "cwd": "${PLUGIN_ROOT}",
       "env": {

@@ -19,3 +19,8 @@ You can expect an acknowledgement within 7 days.
 * All tools are read only. The extension writes no files and runs no shell
   commands.
 * Responses are capped at 25 MB; inputs are validated before any request.
+* The plugin runs `dist/patent-connector.mjs`, a bundle of `index.js` and
+  the exact dependency versions in `package-lock.json`, built with a pinned
+  esbuild version (`npm run build`). It contains no API key or other secret;
+  `npm run test:bundle` runs the offline security tests against it. Rebuild
+  it whenever a dependency gets a security fix.

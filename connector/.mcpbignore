@@ -6,3 +6,5 @@ icon-dark.svg
 icon.png
 icon-64.png
 icon-dark-64.png
+dist/
+scripts/

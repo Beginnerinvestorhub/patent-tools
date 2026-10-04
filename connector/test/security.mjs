@@ -10,6 +10,12 @@ import fs from "node:fs";
 import os from "node:os";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+// --bundle runs the same tests against the committed single file bundle
+// (dist/patent-connector.mjs, made by npm run build) instead of index.js.
+const SERVER = process.argv.includes("--bundle")
+  ? path.join(here, "..", "dist", "patent-connector.mjs")
+  : path.join(here, "..", "index.js");
+console.log("Server under test: " + path.relative(path.join(here, ".."), SERVER));
 const KEY = "TEST_KEY_DO_NOT_LEAK";
 let failures = 0;
 const check = (label, cond, extra = "") => {
@@ -22,7 +28,7 @@ async function run(scenario) {
   fs.writeFileSync(log, "");
   const transport = new StdioClientTransport({
     command: process.execPath,
-    args: ["--import", pathToFileURL(path.join(here, "mock-fetch.mjs")).href, path.join(here, "..", "index.js")],
+    args: ["--import", pathToFileURL(path.join(here, "mock-fetch.mjs")).href, SERVER],
     env: { ...process.env, USPTO_ODP_API_KEY: KEY, MOCK_SCENARIO: scenario, MOCK_LOG: log },
   });
   const client = new Client({ name: "sec", version: "1.0.0" });

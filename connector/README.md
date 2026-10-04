@@ -9,10 +9,20 @@ It runs locally inside Claude Desktop as a desktop extension. You bring your own
 ## Setup
 
 1. Get a free API key: sign in at [data.uspto.gov](https://data.uspto.gov), open **My ODP**, and copy your key.
-2. Install `patent-connector-1.1.1.mcpb` by double clicking it, or drag it into Claude Desktop under **Settings > Extensions**.
+2. Install `patent-connector-1.2.0.mcpb` by double clicking it, or drag it into Claude Desktop under **Settings > Extensions**.
 3. Paste your key when prompted. Claude Desktop saves it in the extension's settings on your computer. The extension sends it only over HTTPS to uspto.gov and never shows it to Claude. You can regenerate the key any time in My ODP.
 
 Requires Claude Desktop with Node.js 18 or newer (bundled with Claude Desktop).
+
+### As a plugin (Claude Code)
+
+Installing the `patent-tools` repository as a plugin starts this server
+from the single file bundle `dist/patent-connector.mjs`, so no `npm install`
+is needed; Node.js 18 or newer must be on your PATH. The plugin has no
+settings screen for the key: set `USPTO_ODP_API_KEY` in the environment
+that starts Claude Code (for example `export USPTO_ODP_API_KEY=your_key` in
+your shell profile). Without it the tools answer "No USPTO API key is
+configured".
 
 ## Tools
 
@@ -37,7 +47,7 @@ All tools are read only. Nothing is ever filed, changed or submitted at USPTO.
 * **Search scope.** Search matches titles and bibliographic fields (applicant, inventor, classification and similar). It does not search inside claim or description text. To compare substance, search first, then read candidates with `get_document_text`.
 * **Coverage.** ODP covers applications filed from 2001 onward. Older patents are not included.
 * **OCR text.** Document text comes from USPTO optical character recognition and can contain small errors. Drawings and most forms are scanned images with no text.
-* **Rate limits.** USPTO applies rate limits per API key. If you hit one, wait a minute and try again.
+* **Rate limits.** USPTO applies rate limits per API key. When USPTO answers that it is busy (HTTP 429, 502, 503 or 504), the extension waits and retries up to two more times on its own, honoring the wait USPTO asks for (up to 10 seconds). If the limit persists you get a plain English message; wait a minute and try again.
 
 ## Troubleshooting
 
@@ -58,8 +68,31 @@ See [PRIVACY.md](PRIVACY.md). In short: the extension collects nothing, has no s
 npm install
 USPTO_ODP_API_KEY=your_key npm test   # live test suite
 node test/security.mjs                # offline security tests (no key needed)
-npm run pack                          # builds ../patent-connector-1.1.1.mcpb
+node test/retry.mjs                   # offline retry tests (no key needed)
+npm run build                         # rebuilds dist/patent-connector.mjs (plugin bundle)
+npm run test:bundle                   # offline tests against the bundle
+npm run pack                          # builds ../patent-connector-1.2.0.mcpb
 ```
+
+### The plugin bundle
+
+The plugin runs `dist/patent-connector.mjs`, one file that holds `index.js`
+and all of its dependencies, because the repository does not commit
+`node_modules` and a plugin installed from git gets no `npm install`.
+`index.js` stays the source. After any change to `index.js` or to the
+dependencies, rebuild and commit the bundle together with the change:
+
+```
+npm ci            # exact versions from package-lock.json
+npm run build     # esbuild (pinned, run through npx): node 18, ESM
+npm run test:bundle
+```
+
+The build also writes `dist/THIRD_PARTY_NOTICES.txt` with the license of
+every bundled package. The bundle contains no API key: the key is read from
+the `USPTO_ODP_API_KEY` environment variable at run time. The `.mcpb`
+desktop extension does not use the bundle; it packs `index.js` with
+`node_modules` as before (`dist/` is in `.mcpbignore`).
 
 ## Security
 
