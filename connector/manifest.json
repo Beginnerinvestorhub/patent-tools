@@ -2,9 +2,9 @@
   "manifest_version": "0.3",
   "name": "patent-connector",
   "display_name": "Patent Connector (USPTO)",
-  "version": "1.2.0",
-  "description": "Search USPTO patents and applications and read their claims, abstracts and specifications, using your own free USPTO API key.",
-  "long_description": "Patent Connector gives Claude live access to the USPTO Open Data Portal (ODP). Search applications and granted patents by keyword, exact phrase or field, with filing date filters for prior art cutoffs. Pull a clean summary of any application, list the documents in its file wrapper, and read the actual text of claims, abstracts and specifications so Claude can compare them against your invention.\n\nRequires a free API key from data.uspto.gov (sign in, then My ODP). Claude Desktop saves your key in the extension settings on your computer. The extension sends it only over HTTPS to uspto.gov hosts and never shows it to Claude. The extension has no servers of its own and collects no data.\n\nThis tool helps with research. It is not legal advice; have a registered patent practitioner review any search or filing.",
+  "version": "1.3.0",
+  "description": "Search USPTO patents and applications, read their claims, abstracts and specifications, and view their drawings, using your own free USPTO API key.",
+  "long_description": "Patent Connector gives Claude live access to the USPTO Open Data Portal (ODP). Search applications and granted patents by keyword, exact phrase or field, with filing date filters for prior art cutoffs. Pull a clean summary of any application or granted patent (by application number or patent number), list the documents in its file wrapper, read the actual text of claims, abstracts and specifications so Claude can compare them against your invention, and view the drawing sheets as images.\n\nRequires a free API key from data.uspto.gov (sign in, then My ODP). Claude Desktop saves your key in the extension settings on your computer. The extension sends it only over HTTPS to uspto.gov hosts and never shows it to Claude. The extension has no servers of its own and collects no data.\n\nThis tool helps with research. It is not legal advice; have a registered patent practitioner review any search or filing.",
   "author": {
     "name": "Kevin Ringler",
     "url": "https://github.com/Beginnerinvestorhub"
@@ -40,15 +40,19 @@
     },
     {
       "name": "get_patent",
-      "description": "Get a concise summary of one application: status, dates, patent number, inventors, assignees, classifications and recent events."
+      "description": "Get a concise summary of one application or granted patent (by application number or patent number): status, dates, patent number, inventors, assignees, classifications and recent events."
     },
     {
       "name": "get_patent_documents",
-      "description": "List the key documents in an application's file wrapper and show which ones have readable text."
+      "description": "List the key documents in an application's file wrapper and show which ones have readable text. Accepts an application number or a patent number."
     },
     {
       "name": "get_document_text",
-      "description": "Read the plain text of claims, abstracts, specifications and other text documents from a file wrapper."
+      "description": "Read the plain text of claims, abstracts, specifications and other text documents from a file wrapper. Accepts an application number or a patent number."
+    },
+    {
+      "name": "get_drawings",
+      "description": "View the drawing sheets of an application or granted patent as images (PNG), a few pages per call."
     }
   ],
   "keywords": [
@@ -56,7 +60,8 @@
     "uspto",
     "prior art",
     "intellectual property",
-    "patent search"
+    "patent search",
+    "patent drawings"
   ],
   "license": "Apache-2.0",
   "compatibility": {

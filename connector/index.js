@@ -11,8 +11,10 @@ import {
   ListToolsRequestSchema,
   CallToolRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
+import { PdfDocument, PdfError, UnsupportedImageError, extractPageImage } from "./lib/pdf.js";
+import { downscale, orient, encodePngGray } from "./lib/raster.js";
 
-const VERSION = "1.2.0";
+const VERSION = "1.3.0";
 const API_KEY = (process.env.USPTO_ODP_API_KEY || "").trim();
 const BASE_URL = "https://api.uspto.gov/api/v1";
 const TIMEOUT_MS = 30000;
@@ -26,7 +28,7 @@ class UserError extends Error {}
 function authHeaders() {
   if (!API_KEY) {
     throw new UserError(
-      "No USPTO API key is configured. Get a free key at https://data.uspto.gov (sign in, then My ODP) and enter it in this extension's settings."
+      "No USPTO API key is configured. Get a free key at https://data.uspto.gov (sign in, then My ODP). In Claude Desktop, enter it in this extension's settings. When running as a plugin (Claude Code and other hosts), set the USPTO_ODP_API_KEY environment variable and fully restart the app."
     );
   }
   return { "x-api-key": API_KEY };
@@ -35,7 +37,7 @@ function authHeaders() {
 function explainHttpError(status, bodyText, notFoundMessage) {
   if (status === 404) return notFoundMessage || "No matching records found at USPTO.";
   if (status === 401 || status === 403)
-    return "USPTO rejected the API key (HTTP " + status + "). Check the key in this extension's settings; keys come from https://data.uspto.gov under My ODP.";
+    return "USPTO rejected the API key (HTTP " + status + "). Check the key in this extension's settings, or the USPTO_ODP_API_KEY environment variable when running as a plugin; keys come from https://data.uspto.gov under My ODP.";
   if (status === 429)
     return "USPTO rate limit reached (HTTP 429). Wait a minute and try again, or make fewer requests in a row.";
   if (status === 400)
@@ -173,11 +175,104 @@ function normalizeAppNumber(raw) {
   const cleaned = String(raw ?? "").replace(/[\s,\/\-]/g, "").replace(/^US/i, "");
   if (!/^\d{6,10}$/.test(cleaned)) {
     throw new UserError(
-      "'" + raw + "' is not a valid USPTO application number. Use the digits only, for example 16123456 or 16/123,456. Patent numbers (like 10123456 on a granted patent) are different; use search_patents to find the application number for a granted patent."
+      "'" + raw + "' is not a valid USPTO application number. Use the digits only, for example 16123456 or 16/123,456. For a granted patent, pass its number as patentNumber instead (for example 12,399,789)."
     );
   }
   return cleaned;
 }
+
+// US patent numbers as people write them: "12399789", "12,399,789",
+// "US 12,399,789 B1", "US12399789", "D987,654", "RE49,123", "PP12,345".
+// Returns the forms to try against applicationMetaData.patentNumber (plain
+// digits for utility patents; the letter prefix plus digits for design,
+// reissue, plant and statutory invention registration numbers, first as
+// written and then zero padded to 8 characters the way USPTO full text data
+// writes them, such as D0987654 or RE049123) and a display form.
+const PATENT_PREFIXES = ["RE", "PP", "D", "H"];
+
+function normalizePatentNumber(raw) {
+  const cleaned = String(raw ?? "").toUpperCase().replace(/[\s,.]/g, "");
+  const m = cleaned.match(/^(?:US)?(RE|PP|D|H)?(\d{1,8})(?:[A-Z]\d?)?$/);
+  const digits = m ? m[2].replace(/^0+/, "") : "";
+  if (!m || !digits) {
+    const pub = /^(?:US)?(19|20)\d{2}\/?\d{7}(?:[A-Z]\d?)?$/.test(cleaned);
+    throw new UserError(
+      "'" + raw + "' does not look like a US patent number. Examples: 12399789, 12,399,789, US 12,399,789 B1, D987,654 or RE49,123." +
+        (pub
+          ? " That looks like a publication number; find its application with search_patents instead."
+          : " Application numbers (like 16/123,456) go in applicationNumber instead.")
+    );
+  }
+  const prefix = m[1] || "";
+  const grouped = digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  const candidates = [prefix + digits];
+  if (prefix && prefix.length + digits.length < 8) candidates.push(prefix + digits.padStart(8 - prefix.length, "0"));
+  return { prefix, digits, candidates, display: "US " + prefix + grouped };
+}
+
+const canonPatent = (v) =>
+  String(v ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/^([A-Z]*)0+/, "$1");
+
+async function resolvePatentNumber(raw) {
+  const pn = normalizePatentNumber(raw);
+  for (const candidate of pn.candidates) {
+    let data;
+    try {
+      data = await postJson("/patent/applications/search", {
+        q: "applicationMetaData.patentNumber:" + candidate,
+        pagination: { offset: 0, limit: 5 },
+        fields: [
+          "applicationNumberText",
+          "applicationMetaData.patentNumber",
+          "applicationMetaData.inventionTitle",
+          "applicationMetaData.applicationTypeLabelName",
+          "applicationMetaData.applicationTypeCode",
+        ],
+      });
+    } catch (err) {
+      // USPTO answers 404 when nothing matches.
+      if (err instanceof UserError && /No matching records/.test(err.message)) continue;
+      throw err;
+    }
+    const hits = (data.patentFileWrapperDataBag || []).filter((w) => {
+      const stored = w.applicationMetaData?.patentNumber;
+      return /^\d{6,10}$/.test(String(w.applicationNumberText || "")) &&
+        (stored === undefined || stored === null || canonPatent(stored) === canonPatent(candidate));
+    });
+    if (!hits.length) continue;
+    // A reexamination record can mention the same patent; prefer the original.
+    const best = hits.find((w) => !isReexam(w.applicationMetaData)) || hits[0];
+    return {
+      applicationNumber: best.applicationNumberText,
+      display: pn.display,
+      note: "Patent " + pn.display + " resolved to application " + best.applicationNumberText + ".",
+    };
+  }
+  throw new UserError(
+    "No USPTO application with patent number " + pn.display + " was found. Check the number; the Open Data Portal covers applications filed from 2001 onward, so older patents are not included." +
+      (pn.prefix
+        ? " Design (D), reissue (RE), plant (PP) and H numbers are looked up the way USPTO writes them (for example D987654); if this one is not found, find its application with search_patents and use applicationNumber."
+        : "")
+  );
+}
+
+const given = (v) => v !== undefined && v !== null && String(v).trim() !== "";
+
+// Every per application tool takes applicationNumber OR patentNumber.
+async function resolveApplication(args) {
+  const hasApp = given(args.applicationNumber);
+  const hasPat = given(args.patentNumber);
+  if (hasApp && hasPat)
+    throw new UserError("Give either applicationNumber or patentNumber, not both.");
+  if (!hasApp && !hasPat)
+    throw new UserError("Give either applicationNumber (for example 18483359) or patentNumber (for example 12,399,789).");
+  if (hasApp) return { appNo: normalizeAppNumber(args.applicationNumber), lookup: null };
+  const r = await resolvePatentNumber(args.patentNumber);
+  return { appNo: normalizeAppNumber(r.applicationNumber), lookup: r };
+}
+
+// Puts the patent number lookup note first in a result object.
+const withLookup = (lookup, obj) => (lookup ? { patentNumberLookup: lookup.note, ...obj } : obj);
 
 function checkDate(value, label) {
   if (value === undefined || value === null || value === "") return undefined;
@@ -385,7 +480,7 @@ async function fetchDocumentText(appNo, { documentId, documentCode }) {
   const xmlOpt = (doc.downloadOptionBag || []).find((o) => o.mimeTypeIdentifier === "XML");
   if (!xmlOpt) {
     throw new UserError(
-      "Document " + doc.documentIdentifier + " (" + doc.documentCodeDescriptionText + ") is only available as a scanned PDF, so its text cannot be extracted. Drawings and most office forms are image only."
+      "Document " + doc.documentIdentifier + " (" + doc.documentCodeDescriptionText + ") is only available as a scanned PDF, so its text cannot be extracted. Drawings and most office forms are image only; use get_drawings to view drawings as images."
     );
   }
   const res = await request(xmlOpt.downloadUrl);
@@ -414,8 +509,15 @@ const READ_ONLY = {
 
 const APP_NO = {
   type: "string",
-  description: "USPTO application number, digits only (e.g. '16123456'). Slashes and commas like '16/123,456' are accepted.",
+  description: "USPTO application number, digits only (e.g. '16123456'). Slashes and commas like '16/123,456' are accepted. Give this or patentNumber, not both.",
 };
+
+const PATENT_NO = {
+  type: "string",
+  description: "Granted US patent number, used instead of applicationNumber, e.g. '12399789', '12,399,789' or 'US 12,399,789 B1'. Design and reissue numbers like 'D987,654' or 'RE49,123' are tried as USPTO writes them. Give this or applicationNumber, not both.",
+};
+
+const ONE_OF_NOTE = " Give either applicationNumber or patentNumber (a granted patent number is looked up to its application first).";
 
 const TOOLS = [
   {
@@ -453,24 +555,24 @@ const TOOLS = [
     name: "get_patent",
     title: "Get patent application details",
     description:
-      "Get a concise summary of one USPTO application or granted patent: title, status, key dates, patent number, inventors, applicants, assignees, CPC classes, examiner and art unit, parent applications and recent prosecution events. Use after search_patents when you need detail on a specific result.",
+      "Get a concise summary of one USPTO application or granted patent: title, status, key dates, patent number, inventors, applicants, assignees, CPC classes, examiner and art unit, parent applications and recent prosecution events. Use after search_patents when you need detail on a specific result." + ONE_OF_NOTE,
     annotations: { title: "Get patent application details", ...READ_ONLY },
     inputSchema: {
       type: "object",
-      properties: { applicationNumber: APP_NO },
-      required: ["applicationNumber"],
+      properties: { applicationNumber: APP_NO, patentNumber: PATENT_NO },
     },
   },
   {
     name: "get_patent_documents",
     title: "List documents in a patent file",
     description:
-      "List the documents in an application's file wrapper (claims, specification, abstract, drawings, office actions, examiner citations, notices of allowance and more), newest first. Each entry shows its documentId and whether text can be extracted. Use this to find a specific document, then call get_document_text to read it.",
+      "List the documents in an application's file wrapper (claims, specification, abstract, drawings, office actions, examiner citations, notices of allowance and more), newest first. Each entry shows its documentId and whether text can be extracted. Use this to find a specific document, then call get_document_text to read it or get_drawings to view drawings." + ONE_OF_NOTE,
     annotations: { title: "List documents in a patent file", ...READ_ONLY },
     inputSchema: {
       type: "object",
       properties: {
         applicationNumber: APP_NO,
+        patentNumber: PATENT_NO,
         filter: {
           type: "string",
           enum: ["key", "all"],
@@ -478,19 +580,19 @@ const TOOLS = [
           description: "key (default): claims, specification, abstract, drawings, office actions, examiner citations, allowance and search reports. all: every document including fee sheets and receipts.",
         },
       },
-      required: ["applicationNumber"],
     },
   },
   {
     name: "get_document_text",
     title: "Read the text of a patent document",
     description:
-      "Download a document from an application's file wrapper and return its plain text, so you can read and compare claims, abstracts and specifications. Give either documentCode (returns the most recent document of that type, default CLM for claims) or a documentId from get_patent_documents. Text comes from USPTO OCR and may contain small recognition errors. Drawings and most forms are scanned images with no text. Long documents are returned in pages; use startChar to continue.",
+      "Download a document from an application's file wrapper and return its plain text, so you can read and compare claims, abstracts and specifications. Give either documentCode (returns the most recent document of that type, default CLM for claims) or a documentId from get_patent_documents. Text comes from USPTO OCR and may contain small recognition errors. Drawings and most forms are scanned images with no text; view drawings with get_drawings. Long documents are returned in pages; use startChar to continue." + ONE_OF_NOTE,
     annotations: { title: "Read the text of a patent document", ...READ_ONLY },
     inputSchema: {
       type: "object",
       properties: {
         applicationNumber: APP_NO,
+        patentNumber: PATENT_NO,
         documentCode: {
           type: "string",
           description: "Document type to fetch the latest version of: CLM (claims, default), ABST (abstract), SPEC (specification), REM (applicant remarks), CTNF or CTFR (office actions, when text is available).",
@@ -499,7 +601,23 @@ const TOOLS = [
         startChar: { type: "integer", minimum: 0, default: 0, description: "Character offset to start from, for reading long documents in pages." },
         maxChars: { type: "integer", minimum: 1000, maximum: 60000, default: 20000, description: "Maximum characters to return (default 20000)." },
       },
-      required: ["applicationNumber"],
+    },
+  },
+  {
+    name: "get_drawings",
+    title: "View patent drawings",
+    description:
+      "Show the drawing sheets of a USPTO application or granted patent as images, so you can look at the figures (for example prior art drawings). Downloads the drawings document (DRW, the most recent one unless documentId is given), and returns one PNG image per page plus a short summary. Returns pages 1 to 3 by default and at most 5 pages per call; ask for more with pages, for example '4-6'." + ONE_OF_NOTE,
+    annotations: { title: "View patent drawings", ...READ_ONLY },
+    inputSchema: {
+      type: "object",
+      properties: {
+        applicationNumber: APP_NO,
+        patentNumber: PATENT_NO,
+        documentId: { type: "string", description: "Optional. Exact documentId from get_patent_documents (for example an older or replacement drawings document). Defaults to the most recent drawings document." },
+        pages: { type: "string", description: "Optional. Pages to show, 1 based: a single page '2', a range '1-3' or a list '2,4'. Default: the first 3 pages. At most 5 pages per call." },
+        maxDimension: { type: "integer", minimum: 600, maximum: 2400, default: 1600, description: "Optional. Longest side of each image in pixels (600 to 2400, default 1600). Larger values make small reference numerals easier to read." },
+      },
     },
   },
 ];
@@ -557,18 +675,18 @@ async function searchPatents(args) {
 }
 
 async function getPatent(args) {
-  const appNo = normalizeAppNumber(args.applicationNumber);
+  const { appNo, lookup } = await resolveApplication(args);
   const data = await getJson(
     "/patent/applications/" + appNo,
-    "No application " + appNo + " was found at USPTO. If this is a granted patent number, search for it with search_patents using matchMode 'advanced' and the query applicationMetaData.patentNumber:" + appNo + "."
+    "No application " + appNo + " was found at USPTO." + (lookup ? "" : " If this is a granted patent number, pass it as patentNumber instead.")
   );
   const w = (data.patentFileWrapperDataBag || [])[0];
   if (!w) throw new UserError("No application " + appNo + " was found at USPTO.");
-  return summarizeApplication(w);
+  return withLookup(lookup, summarizeApplication(w));
 }
 
 async function getPatentDocuments(args) {
-  const appNo = normalizeAppNumber(args.applicationNumber);
+  const { appNo, lookup } = await resolveApplication(args);
   const data = await getJson(
     "/patent/applications/" + appNo + "/documents",
     "No application " + appNo + " was found at USPTO."
@@ -578,20 +696,24 @@ async function getPatentDocuments(args) {
     .sort((a, b) => String(b.officialDate).localeCompare(String(a.officialDate)));
   const filter = args.filter === "all" ? "all" : "key";
   const docs = filter === "all" ? all : all.filter((d) => KEY_CODES.has(d.documentCode));
-  return {
+  return withLookup(lookup, {
     applicationNumber: appNo,
     totalDocuments: all.length,
     shown: docs.length,
     filter,
     documents: docs.map(summarizeDocument),
-  };
+  });
+}
+
+function checkDocumentId(documentId) {
+  if (documentId && !/^[A-Za-z0-9.\-_]{4,80}$/.test(documentId)) {
+    throw new UserError("documentId '" + documentId + "' does not look valid. Copy it exactly from get_patent_documents.");
+  }
 }
 
 async function getDocumentText(args) {
-  const appNo = normalizeAppNumber(args.applicationNumber);
-  if (args.documentId && !/^[A-Za-z0-9.\-_]{4,80}$/.test(args.documentId)) {
-    throw new UserError("documentId '" + args.documentId + "' does not look valid. Copy it exactly from get_patent_documents.");
-  }
+  checkDocumentId(args.documentId);
+  const { appNo, lookup } = await resolveApplication(args);
   const { doc, text } = await fetchDocumentText(appNo, args);
   const start = clampInt(args.startChar, 0, 0, Math.max(text.length, 0));
   const max = clampInt(args.maxChars, 20000, 1000, 60000);
@@ -609,7 +731,136 @@ async function getDocumentText(args) {
     text: slice,
   };
   if (start + slice.length < text.length) out.nextStartChar = start + slice.length;
-  return out;
+  return withLookup(lookup, out);
+}
+
+// ---------------------------------------------------------------------------
+// Drawings as images
+// ---------------------------------------------------------------------------
+
+const DRAWING_CODES = ["DRW", "DRW.NONBW"];
+const MAX_DRAWING_PAGES = 5;
+const DEFAULT_DRAWING_PAGES = 3;
+const MAX_PNG_BYTES = 1024 * 1024; // shrink further if a page would exceed this
+// Marks a handler result that is already MCP content (text plus images).
+const CONTENT = Symbol("content");
+
+// "2", "1-3", "2,4", "1-2,5" -> sorted unique 1 based page numbers.
+function parsePages(raw) {
+  if (raw === undefined || raw === null || String(raw).trim() === "") return null;
+  const text = String(raw).replace(/\s+/g, "");
+  const pages = new Set();
+  for (const part of text.split(",")) {
+    const m = part.match(/^(\d{1,5})(?:[-\u2013](\d{1,5}))?$/);
+    const a = m ? Number(m[1]) : NaN;
+    const b = m && m[2] ? Number(m[2]) : a;
+    if (!m || a < 1 || b < a)
+      throw new UserError("pages '" + raw + "' is not valid. Use a page number like '2', a range like '1-3', or a list like '2,4' (pages start at 1).");
+    for (let p = a; p <= b && pages.size <= MAX_DRAWING_PAGES; p++) pages.add(p);
+    if (pages.size > MAX_DRAWING_PAGES) break;
+  }
+  if (pages.size > MAX_DRAWING_PAGES)
+    throw new UserError("get_drawings returns at most " + MAX_DRAWING_PAGES + " pages per call. Ask for fewer pages, then call again for the rest (for example '1-5', then '6-10').");
+  return [...pages].sort((x, y) => x - y);
+}
+
+const listPages = (nums) => (nums.length === 1 ? "page " + nums[0] : "pages " + nums.slice(0, -1).join(", ") + " and " + nums[nums.length - 1]);
+
+function pdfProblem(err) {
+  if (err instanceof PdfError) return err.message;
+  return "it could not be read (" + (err?.message || String(err)) + ")";
+}
+
+function renderPage(pdf, index, maxDimension) {
+  const img = extractPageImage(pdf, index);
+  let dim = maxDimension;
+  for (;;) {
+    const small = orient(downscale(img, dim, { bilevel: img.bilevel }), img.orientation);
+    const png = encodePngGray(small);
+    if (png.length <= MAX_PNG_BYTES || dim <= 600) return { png, width: small.width, height: small.height };
+    dim = Math.max(600, Math.round(dim * 0.75));
+  }
+}
+
+async function getDrawings(args) {
+  checkDocumentId(args.documentId);
+  const requested = parsePages(args.pages);
+  const maxDimension = clampInt(args.maxDimension, 1600, 600, 2400);
+  const { appNo, lookup } = await resolveApplication(args);
+  const list = await getJson(
+    "/patent/applications/" + appNo + "/documents",
+    "No application " + appNo + " was found at USPTO."
+  );
+  const docs = list.documentBag || [];
+  const pdfOption = (d) => (d.downloadOptionBag || []).find((o) => o.mimeTypeIdentifier === "PDF" && o.downloadUrl);
+  let doc;
+  if (args.documentId) {
+    doc = docs.find((d) => d.documentIdentifier === args.documentId);
+    if (!doc) throw new UserError("Document " + args.documentId + " was not found in application " + appNo + ". Use get_patent_documents to list valid document IDs.");
+  } else {
+    doc = docs
+      .filter((d) => DRAWING_CODES.includes(d.documentCode) && pdfOption(d))
+      .sort((a, b) => String(b.officialDate).localeCompare(String(a.officialDate)) || DRAWING_CODES.indexOf(a.documentCode) - DRAWING_CODES.indexOf(b.documentCode))[0];
+    if (!doc) throw new UserError("Application " + appNo + " has no drawings document (DRW) at USPTO. Some applications have no drawings; use get_patent_documents to see what exists.");
+  }
+  const opt = pdfOption(doc);
+  if (!opt) throw new UserError("Document " + doc.documentIdentifier + " has no PDF download at USPTO, so it cannot be shown as images.");
+
+  const res = await request(opt.downloadUrl, {}, "USPTO could not find the PDF for document " + doc.documentIdentifier + ".");
+  const buf = await readLimited(res);
+  let pdf;
+  let total;
+  try {
+    pdf = new PdfDocument(buf);
+    total = pdf.pages().length;
+  } catch (err) {
+    throw new UserError("Could not read the drawings PDF for document " + doc.documentIdentifier + ": " + pdfProblem(err) + ".");
+  }
+  if (!total) throw new UserError("The drawings PDF for document " + doc.documentIdentifier + " has no pages.");
+
+  const pages = requested || Array.from({ length: Math.min(DEFAULT_DRAWING_PAGES, total) }, (_, i) => i + 1);
+  const missing = pages.filter((p) => p > total);
+  if (missing.length)
+    throw new UserError(
+      (missing.length === 1 ? "Page " + missing[0] + " does not exist" : "Pages " + missing.join(", ") + " do not exist") +
+        ": document " + doc.documentIdentifier + " has " + total + (total === 1 ? " page." : " pages (1 to " + total + ").")
+    );
+
+  const images = [];
+  const shown = [];
+  const unreadable = [];
+  for (const p of pages) {
+    try {
+      const r = renderPage(pdf, p - 1, maxDimension);
+      images.push({ type: "image", data: r.png.toString("base64"), mimeType: "image/png" });
+      shown.push({ page: p, width: r.width, height: r.height, pngBytes: r.png.length });
+    } catch (err) {
+      const reason = err instanceof UnsupportedImageError ? err.message : pdfProblem(err);
+      unreadable.push({ page: p, problem: "Page " + p + " cannot be shown: " + reason + "." });
+    }
+  }
+
+  const summary = withLookup(lookup, {
+    applicationNumber: appNo,
+    documentId: doc.documentIdentifier,
+    code: doc.documentCode,
+    description: doc.documentCodeDescriptionText,
+    date: String(doc.officialDate || "").slice(0, 10),
+    totalPages: total,
+    pagesReturned: shown.map((s) => s.page),
+    images: shown,
+  });
+  if (unreadable.length) summary.unreadablePages = unreadable;
+  const notShown = [];
+  for (let p = 1; p <= total; p++) if (!pages.includes(p)) notShown.push(p);
+  if (notShown.length) {
+    const next = notShown.filter((p) => p > Math.max(...pages)).slice(0, MAX_DRAWING_PAGES);
+    summary.morePages = listPages(notShown) + " not shown." + (next.length ? " Call get_drawings again with pages '" + (next.length === 1 ? next[0] : next[0] + "-" + next[next.length - 1]) + "' to see more." : "");
+  }
+  summary.note = shown.length
+    ? "The images below are the drawing sheets from the USPTO record for this application, as filed or as published, in page order and downscaled for viewing. If reference numerals are hard to read, ask again with a larger maxDimension (up to 2400)."
+    : "None of the requested pages could be shown as images. The document can still be opened in Patent Center: https://patentcenter.uspto.gov/applications/" + appNo;
+  return { [CONTENT]: [{ type: "text", text: JSON.stringify(summary, null, 2) }, ...images] };
 }
 
 const HANDLERS = {
@@ -617,6 +868,7 @@ const HANDLERS = {
   get_patent: getPatent,
   get_patent_documents: getPatentDocuments,
   get_document_text: getDocumentText,
+  get_drawings: getDrawings,
 };
 
 // ---------------------------------------------------------------------------
@@ -636,6 +888,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   try {
     if (!handler) throw new UserError("Unknown tool: " + name);
     const data = await handler(args);
+    if (data && data[CONTENT]) return { content: data[CONTENT] };
     return { content: [{ type: "text", text: JSON.stringify(data, null, 2) }] };
   } catch (err) {
     const message = err instanceof UserError ? err.message : "Unexpected error: " + (err?.message || String(err));
