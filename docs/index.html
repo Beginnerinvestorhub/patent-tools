@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Patent Tools — USPTO superpowers for Claude</title>
+<meta name="description" content="A Claude plugin: live USPTO patent search, claims and spec reading, drawing viewing — plus a 37 CFR 1.84 patent drawing checker.">
+<style>
+  :root {
+    --ink: #1a1a2e;
+    --muted: #555;
+    --accent: #0057b8;
+    --card: #f7f7fa;
+    --line: #e2e2ea;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: var(--ink);
+    line-height: 1.6;
+    background: #fff;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; padding: 0 20px; }
+  header {
+    text-align: center;
+    padding: 56px 20px 32px;
+    border-bottom: 1px solid var(--line);
+  }
+  header img { width: 120px; height: auto; }
+  h1 { margin: 16px 0 8px; font-size: 2rem; }
+  .tag { color: var(--muted); font-size: 1.1rem; margin: 0 auto; max-width: 560px; }
+  .badges { margin-top: 18px; }
+  .badges a { margin: 0 4px; }
+  section { padding: 32px 0; border-bottom: 1px solid var(--line); }
+  h2 { font-size: 1.3rem; margin: 0 0 14px; }
+  .cards { display: grid; gap: 14px; }
+  @media (min-width: 640px) { .cards { grid-template-columns: 1fr 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 18px;
+  }
+  .card h3 { margin: 0 0 6px; font-size: 1rem; }
+  .card p { margin: 0; color: var(--muted); font-size: .95rem; }
+  .install { margin: 14px 0; }
+  .install h3 { font-size: 1rem; margin: 0 0 4px; }
+  .install p { margin: 0 0 8px; color: var(--muted); font-size: .95rem; }
+  pre {
+    background: var(--ink);
+    color: #eaeaf2;
+    padding: 12px 14px;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: .9rem;
+  }
+  code { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; }
+  .note {
+    background: #fff8e6;
+    border: 1px solid #f0dfa0;
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-size: .9rem;
+    color: #6b5b1e;
+  }
+  ul { padding-left: 20px; }
+  li { margin: 6px 0; }
+  a { color: var(--accent); }
+  footer { padding: 28px 0 48px; color: var(--muted); font-size: .85rem; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <img src="icon-dark.png" alt="Patent Tools icon: a wall outlet with a plug, labeled FIG. 1">
+  <h1>Patent Tools</h1>
+  <p class="tag">Live USPTO patent search, document reading and drawing viewing —
+  plus a patent drawing skill that drafts and checks figures under 37&nbsp;CFR&nbsp;1.84.
+  Built for Claude.</p>
+  <p class="badges">
+    <a href="https://github.com/Beginnerinvestorhub/patent-tools/actions/workflows/ci.yml"><img src="https://github.com/Beginnerinvestorhub/patent-tools/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
+    <a href="https://github.com/Beginnerinvestorhub/patent-tools/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-Apache%202.0-blue.svg" alt="Apache 2.0"></a>
+  </p>
+</header>
+
+<div class="wrap">
+
+<section>
+  <h2>What's inside</h2>
+  <div class="cards">
+    <div class="card">
+      <h3>Patent Connector (USPTO) 1.3.1</h3>
+      <p>An MCP server and Claude Desktop extension. Search patents and
+      applications, read the actual text of claims, abstracts and
+      specifications, and view drawing sheets as images — including CCITT
+      fax-compressed scans. Bring your own free USPTO API key.</p>
+    </div>
+    <div class="card">
+      <h3>Patent Drawing skill 1.2.2</h3>
+      <p>Drafts patent figures under 37 CFR 1.84, runs an automated
+      compliance checker, compares reference numerals against your
+      specification, and assembles a filing-ready PDF.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Install</h2>
+
+  <div class="install">
+    <h3>Claude Desktop</h3>
+    <p>Download the extension and double click it (or drag it into
+    Settings &gt; Extensions). Claude Desktop will ask for your free
+    USPTO API key.</p>
+    <pre><code>https://github.com/Beginnerinvestorhub/patent-tools/releases/latest/download/patent-connector-1.3.1.mcpb</code></pre>
+  </div>
+
+  <div class="install">
+    <h3>Claude Code</h3>
+    <p>Installs the drawing skill and the connector together. Requires
+    Node.js 18+ and a <code>USPTO_ODP_API_KEY</code> environment variable.</p>
+    <pre><code>claude plugin marketplace add Beginnerinvestorhub/patent-tools
+claude plugin install patent-tools@patent-tools</code></pre>
+  </div>
+
+  <div class="install">
+    <h3>Claude.ai</h3>
+    <p>Zip the <code>skills/patent-drawing</code> folder and upload it
+    under Customize &gt; Skills.</p>
+  </div>
+
+  <div class="install">
+    <h3>Devin</h3>
+    <pre><code>devin plugins install Beginnerinvestorhub/patent-tools</code></pre>
+  </div>
+
+  <p class="note">The connector needs your own free key from
+  <a href="https://data.uspto.gov">data.uspto.gov</a> (sign in, then
+  My&nbsp;ODP). Your key and queries go straight from your computer to
+  api.uspto.gov — there are no servers in between.</p>
+</section>
+
+<section>
+  <h2>Try asking</h2>
+  <ul>
+    <li>"Search for prior art on partitioned read and write authority for
+    data isolation, filed before March 2024."</li>
+    <li>"Show me the drawings of patent 12,399,789."</li>
+    <li>"Read the claims of US 12,399,789 B1 and compare claim 1 to my
+    invention."</li>
+    <li>"Draw FIG. 1 for my application as a block diagram that meets
+    37 CFR 1.84."</li>
+  </ul>
+</section>
+
+<section>
+  <h2>Links</h2>
+  <ul>
+    <li><a href="https://github.com/Beginnerinvestorhub/patent-tools">Source code</a> (Apache 2.0)</li>
+    <li><a href="https://github.com/Beginnerinvestorhub/patent-tools/releases">Releases</a></li>
+    <li><a href="https://github.com/Beginnerinvestorhub/patent-tools/discussions">Discussions</a> — questions, prior art finds, drawing help</li>
+    <li><a href="https://github.com/Beginnerinvestorhub/patent-tools/issues">Issue tracker</a></li>
+    <li><a href="https://github.com/Beginnerinvestorhub/patent-tools/blob/main/CHANGELOG.md">Changelog</a></li>
+  </ul>
+</section>
+
+</div>
+
+<footer>
+  <p>Research and drafting tools, not legal advice. Have a registered
+  patent attorney or agent review anything before you rely on it or file.</p>
+  <p>Copyright 2026 Kevin Ringler · Apache License 2.0 ·
+  <a href="https://github.com/Beginnerinvestorhub/patent-tools">Beginnerinvestorhub/patent-tools</a></p>
+</footer>
+
+</body>
+</html>
