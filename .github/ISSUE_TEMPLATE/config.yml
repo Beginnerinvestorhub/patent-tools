@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://github.com/Beginnerinvestorhub/patent-tools#readme
+    about: Review the project documentation before opening an issue.
+  - name: Discussions
+    url: https://github.com/Beginnerinvestorhub/patent-tools/discussions
+    about: Ask general questions and share ideas in the repository discussions.
