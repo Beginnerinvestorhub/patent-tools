@@ -12,6 +12,6 @@ svgelements>=1.9.6
 # If svglib or reportlab is missing, build_pdf.py falls back to cairosvg when
 # that and the Cairo library are installed (pip install cairosvg).
 svglib>=2.2
-reportlab>=5.0
+reportlab>=5.0.1
 # optional: PDF verification and PNG previews in build_pdf.py
 pymupdf>=1.27
