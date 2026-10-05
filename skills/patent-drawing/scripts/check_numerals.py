@@ -329,8 +329,14 @@ def spec_numerals(text: str, original: str):
         return True
 
     for m in _ANCHORED.finditer(text):
-        if m.group(1).lower().strip("'’-") in _STOP_ANCHORS:
-            continue
+        anchor = m.group(1).strip("'’-")
+        if anchor.lower() in _STOP_ANCHORS:
+            # Capitalized anchors name elements ("Artifact Store 126",
+            # "Channel 330"); the quantity verbs the stop list targets are
+            # lowercase mid-sentence ("stores 100 entries").
+            if not (anchor[0].isupper() and anchor.lower() in
+                    {"store", "stores", "storing"}):
+                continue
         if not add(m.group(2), m.group(3), m.start(), m.end()):
             continue
         pos, prev = m.end(), (m.group(2), m.group(3))

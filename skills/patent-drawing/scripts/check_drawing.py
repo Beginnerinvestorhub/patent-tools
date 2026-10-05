@@ -56,6 +56,46 @@ import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
 
+
+def parse_length_to_mm(length_str: str | None, default_unit: str = "px") -> float | None:
+    """Convert SVG/CSS length string to physical millimeters.
+    Handles units: mm, cm, in, pt, pc, px (default), and unitless (treated as default_unit).
+    """
+    if not length_str:
+        return None
+    m = re.match(r"^([\d.]+)\s*([a-zA-Z%]*)$", str(length_str).strip())
+    if not m:
+        return None
+    val = float(m.group(1))
+    unit = (m.group(2).lower() or default_unit)
+    if unit == "mm":
+        return val
+    if unit == "cm":
+        return val * 10.0
+    if unit == "in":
+        return val * 25.4
+    if unit == "pt":
+        return val * (25.4 / 72.0)
+    if unit == "pc":
+        return val * (25.4 / 6.0)
+    if unit == "px":
+        return val * (25.4 / 96.0)
+    return None  # %, unknown units: not a physical length
+
+
+def physical_sheet_mm(svg_root: ET.Element, viewbox_w: float, viewbox_h: float) -> tuple[float, float]:
+    """Physical sheet size in mm, from the root width/height attributes.
+
+    The attributes may carry mm, cm, in, pt, pc or px units, or be unitless
+    (px per the SVG spec). When missing or non-physical (e.g. '%'), the
+    viewBox units are treated as px at 96 dpi.
+    """
+    px_mm = 25.4 / 96.0
+    pw = parse_length_to_mm(svg_root.get("width"))
+    ph = parse_length_to_mm(svg_root.get("height"))
+    return (pw if pw else viewbox_w * px_mm,
+            ph if ph else viewbox_h * px_mm)
+
 try:
     from svgelements import SVG, Shape, Text, Group, Image as SvgImage
 except ImportError:
@@ -324,7 +364,11 @@ def split_top_margin(path: Path, rep: SheetReport, w: float):
                 if fill not in ("#000000", "#000", "black"):
                     rep.fails.append(f"Top margin text must be black, found fill {fill}.")
                 try:
-                    fs = float(str(el.get("font-size") or style.get("font-size") or group_fs or "0").replace("px", ""))
+                    fs_str = str(el.get("font-size") or style.get("font-size") or group_fs or "0")
+                    fs_mm = parse_length_to_mm(fs_str, default_unit="mm")
+                    if fs_mm is None:
+                        raise ValueError("invalid font-size")
+                    fs = fs_mm
                     x, y = float(el.get("x", "0")), float(el.get("y", "0"))
                 except ValueError:
                     rep.fails.append("Top margin text needs numeric x, y and font-size in mm.")
@@ -352,14 +396,20 @@ def check_sheet(path: Path, multi_sheet: bool) -> SheetReport:
     if size is None:
         return rep
     w, h = size
-    sight = (MARGINS["left"], MARGINS["top"], w - MARGINS["right"], h - MARGINS["bottom"])
+    root_pre = ET.parse(path).getroot()
+    phys_w_mm, phys_h_mm = physical_sheet_mm(root_pre, w, h)
+    sight = (MARGINS["left"], MARGINS["top"], phys_w_mm - MARGINS["right"], phys_h_mm - MARGINS["bottom"])
 
-    body, sheet_orientation = split_top_margin(path, rep, w)
+    body, sheet_orientation = split_top_margin(path, rep, phys_w_mm)
     if sheet_orientation not in ("portrait", "landscape"):
         rep.fails.append(f"data-orientation must be 'portrait' or 'landscape', got '{sheet_orientation}'.")
     rep.orientation = sheet_orientation
     svg = SVG.parse(body)
-    scale = (svg.width / w) if svg.width else 1.0
+    # px per physical mm: element geometry from svgelements is in viewport px,
+    # so geometry_mm = px / scale. For mm viewBox sheets this is svg.width/216
+    # (~3.78, the original convention); for px sheets (unitless width = px per
+    # the SVG spec) 816px / 215.9mm lands at the same 3.78 px/mm.
+    scale = (svg.width or w) / phys_w_mm
 
     bad_colors = set()
     outside = []
@@ -370,7 +420,29 @@ def check_sheet(path: Path, multi_sheet: bool) -> SheetReport:
     text_boxes = []   # (label, box)
     line_points = []  # sampled points along every stroked shape, in mm
 
-    for el in svg.elements():
+    # Unstroked shapes with an opaque fill paint over anything drawn earlier:
+    # a white label patch visually interrupts the connector behind it, so line
+    # samples it covers are not visible ink and cannot "mingle" with text.
+    covers = []       # (z index, bbox mm) of fill-only shapes
+    for zi, el in enumerate(svg.elements()):
+        if not isinstance(el, Shape):
+            continue
+        if color_hex(getattr(el, "stroke", None)) is not None:
+            continue
+        fill_c = color_hex(getattr(el, "fill", None))
+        if fill_c is None:
+            continue
+        try:
+            cbb = el.bbox(with_stroke=False)
+        except Exception:
+            cbb = None
+        if cbb is None:
+            continue
+        if cbb[0] <= 2 and cbb[1] <= 2 and cbb[2] >= w - 2 and cbb[3] >= h - 2:
+            continue  # page backdrop covers nothing of interest
+        covers.append((zi, tuple(v / scale for v in cbb)))
+
+    for zi, el in enumerate(svg.elements()):
         if isinstance(el, SvgImage):
             rep.fails.append("Embedded raster image found. Patent drawings must be vector line art.")
             continue
@@ -404,6 +476,18 @@ def check_sheet(path: Path, multi_sheet: bool) -> SheetReport:
             boxes = [("text '" + s[:20] + "'", box)]
             text_boxes.append((s[:24], box))
         elif isinstance(el, Shape):
+            # A full-sheet white backdrop rect is page background, not drawing
+            # content — it legitimately spans the margins.
+            try:
+                bb0 = el.bbox(with_stroke=False)
+            except Exception:
+                bb0 = None
+            if (bb0 is not None
+                    and bb0[0] <= 2 and bb0[1] <= 2
+                    and bb0[2] >= w - 2 and bb0[3] >= h - 2
+                    and color_hex(getattr(el, "stroke", None)) is None
+                    and color_hex(getattr(el, "fill", None)) in (None, "#ffffff")):
+                continue
             for attr in ("stroke", "fill"):
                 c = color_hex(getattr(el, attr, None))
                 if c is not None and c not in OK_COLORS:
@@ -416,7 +500,12 @@ def check_sheet(path: Path, multi_sheet: bool) -> SheetReport:
             if bb is None:
                 continue
             boxes = [(type(el).__name__.lower(), tuple(v / scale for v in bb))]
-            if color_hex(getattr(el, "stroke", None)) is not None or color_hex(getattr(el, "fill", None)) is not None:
+            stroke_c = color_hex(getattr(el, "stroke", None))
+            fill_c = color_hex(getattr(el, "fill", None))
+            # Only visible ink counts: a stroked outline, or a non-white fill
+            # region (approximated by its outline). A fill-only white shape has
+            # no visible edge and instead masks whatever it paints over.
+            if stroke_c is not None or (fill_c is not None and fill_c != "#ffffff"):
                 try:
                     from svgelements import Path as _P
                     path = _P(el)
@@ -424,7 +513,12 @@ def check_sheet(path: Path, multi_sheet: bool) -> SheetReport:
                     n = max(int(length / 0.4), 2)
                     for k in range(n + 1):
                         pt = path.point(k / n)
-                        line_points.append((pt.x / scale, pt.y / scale))
+                        mx, my = pt.x / scale, pt.y / scale
+                        if stroke_c is not None and any(
+                                ci > zi and cx0 <= mx <= cx1 and cy0 <= my <= cy1
+                                for ci, (cx0, cy0, cx1, cy1) in covers):
+                            continue  # hidden under a later opaque patch
+                        line_points.append((mx, my))
                 except Exception:
                     pass
             if sw is not None and color_hex(el.stroke) is not None:
@@ -442,7 +536,7 @@ def check_sheet(path: Path, multi_sheet: bool) -> SheetReport:
         for label, (x0, y0, x1, y1) in boxes:
             if x0 < sight[0] - TOL or y0 < sight[1] - TOL or x1 > sight[2] + TOL or y1 > sight[3] + TOL:
                 outside.append(f"{label} at ({x0:.1f},{y0:.1f})-({x1:.1f},{y1:.1f})")
-            elif multi_sheet and y0 < sight[1] + SHEET_NUMBER_BAND - TOL:
+            elif multi_sheet and not rep.indicia and y0 < sight[1] + SHEET_NUMBER_BAND - TOL:
                 in_band.append(label)
 
     # Characters must not cross or mingle with lines (37 CFR 1.84(p)(3)).
@@ -456,7 +550,7 @@ def check_sheet(path: Path, multi_sheet: bool) -> SheetReport:
     if clashes:
         rep.fails.append(
             f"{len(clashes)} text item(s) touch or cross a line (text overflowing its box, or a line "
-            "running through it): " + ", ".join(repr(c) for c in clashes[:6])
+            "running through it): " + ", ".join(repr(c) for c in clashes)
             + ". Characters must not cross or mingle with lines (37 CFR 1.84(p)(3)).")
     if bad_colors:
         rep.fails.append("Non black colour or grey found: " + ", ".join(sorted(bad_colors)) + ".")
@@ -514,6 +608,13 @@ def check_set(reports: list[SheetReport], partial: bool = False) -> list[str]:
 
 
 def main(argv=None):
+    # Figure text may contain non-ASCII (arrows, warning signs); on Windows
+    # consoles the default cp1252 codec cannot print them and kills the run.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(encoding="utf-8", errors="replace")
+        except Exception:
+            pass
     ap = argparse.ArgumentParser(description="Check patent drawing SVG sheets against 37 CFR 1.84.")
     ap.add_argument("files", nargs="+", help="SVG sheets, in sheet order")
     ap.add_argument("--json", action="store_true", help="print a JSON report")
