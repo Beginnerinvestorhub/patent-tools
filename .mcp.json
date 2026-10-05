@@ -6,7 +6,7 @@
         "${CLAUDE_PLUGIN_ROOT}/connector/dist/patent-connector.mjs"
       ],
       "env": {
-        "USPTO_ODP_API_KEY": "${USPTO_ODP_API_KEY}"
+        "USPTO_ODP_API_KEY": "${user_config.uspto_odp_api_key}"
       }
     }
   }

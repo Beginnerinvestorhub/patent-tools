@@ -9,6 +9,16 @@
   "repository": "https://github.com/Beginnerinvestorhub/patent-tools",
   "homepage": "https://github.com/Beginnerinvestorhub/patent-tools",
   "license": "Apache-2.0",
+  "icon": ".claude-plugin/icon.png",
+  "userConfig": {
+    "uspto_odp_api_key": {
+      "type": "string",
+      "title": "USPTO ODP API key",
+      "description": "Free key from data.uspto.gov (sign in, then My ODP). Required for the Patent Connector tools; the drawing skill works without it.",
+      "sensitive": true,
+      "required": false
+    }
+  },
   "keywords": [
     "patents",
     "uspto",

@@ -71,11 +71,11 @@ The connector needs your own free key from
 * **Plugin (Claude Code and other hosts using `.mcp.json` or
   `mcp_config.json`):** the plugin reads the `USPTO_ODP_API_KEY`
   environment variable. Set it once:
-  * **Claude Code (easiest):** add `"env": {"USPTO_ODP_API_KEY":
-    "your_key_here"}` to `~/.claude/settings.json` — or
-    `.claude/settings.local.json` for a single project (that file is
-    gitignored, so the key cannot be committed by accident) — then
-    restart Claude Code.
+  * **Claude Code (easiest):** when the plugin is enabled, Claude Code
+    prompts for the key and stores it in secure storage. You can also
+    set it later via the plugin's configure options. The older paths
+    still work: `"env": {"USPTO_ODP_API_KEY": "your_key_here"}` in
+    `~/.claude/settings.json`, or the OS environment variable below.
   * **Windows:** run `setx USPTO_ODP_API_KEY "your_key_here"` in Command
     Prompt or PowerShell, or add it under System Properties > Environment
     Variables > User variables > New. Then close every terminal and quit
