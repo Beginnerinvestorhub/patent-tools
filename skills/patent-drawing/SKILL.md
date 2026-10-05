@@ -13,7 +13,7 @@ metadata:
 # Patent Drawing Creator
 
 Produces USPTO compliant patent drawings and checks existing figures.
-Strongest for software and architecture inventions. Version 1.2.1; see
+Strongest for software and architecture inventions. Version 1.2.2; see
 CHANGELOG.md.
 
 ## When to use, and when not to

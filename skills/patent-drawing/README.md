@@ -3,7 +3,7 @@
 A Claude skill that drafts and checks USPTO patent drawings under 37 CFR
 1.84, and assembles them into a filing ready PDF.
 
-Version 1.2.0 · Apache License 2.0 · Author: Kevin Ringler
+Version 1.2.2 · Apache License 2.0 · Author: Kevin Ringler
 
 > Not legal advice. Have a registered patent attorney or agent review any
 > drawings before filing.
@@ -113,7 +113,7 @@ THE DRAWINGS" (one sentence per figure) for your attorney to review.
 * Not suitable for filing quality design patent shading, true mechanical
   drafting, or plant photographs.
 * Rules and fees change. The reference files state the rules as understood
-  at version 1.2.0.
+  at version 1.2.2.
 
 ## Safety and privacy
 
