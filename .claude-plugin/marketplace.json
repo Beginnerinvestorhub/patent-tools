@@ -1,5 +1,6 @@
 {
   "name": "patent-tools",
+  "description": "USPTO patent tools for Claude: a patent drawing skill that drafts and checks figures under 37 CFR 1.84, plus the Patent Connector MCP server for live USPTO search, document reading and drawing viewing.",
   "owner": {
     "name": "Kevin Ringler",
     "url": "https://github.com/Beginnerinvestorhub"
