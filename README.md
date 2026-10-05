@@ -12,6 +12,8 @@ Two companion tools that give Claude patent superpowers: live access to the
 USPTO Open Data Portal, and the ability to draft and check USPTO-compliant
 patent drawings.
 
+<a href="https://beginnerinvestorhub.github.io/patent-tools/"><img src="docs/landing-page-preview.png" alt="The Patent Tools project site" width="640"></a>
+
 > These are research and drafting tools, not legal advice. Have a registered
 > patent attorney or agent review anything before you rely on it or file.
 
