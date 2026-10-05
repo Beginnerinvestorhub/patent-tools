@@ -42,7 +42,23 @@ How the key reaches the connector depends on how you installed it:
 Get the key first: sign in at [data.uspto.gov](https://data.uspto.gov),
 open **My ODP**, and copy it.
 
-**Windows**
+**Claude Code settings.json (easiest for the plugin)**
+
+Add the key to `~/.claude/settings.json`:
+
+```
+{
+  "env": {
+    "USPTO_ODP_API_KEY": "your_key_here"
+  }
+}
+```
+
+For a single project, put it in `.claude/settings.local.json` instead —
+that file is gitignored, so the key cannot be committed by accident.
+Restart Claude Code once after saving.
+
+**Windows environment variable**
 
 1. Open Command Prompt or PowerShell and run (with your own key inside the
    quotes):
