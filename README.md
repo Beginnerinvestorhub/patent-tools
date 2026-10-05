@@ -152,6 +152,7 @@ locally with no network access. See [connector/SECURITY.md](connector/SECURITY.m
 - [Contributing guide](CONTRIBUTING.md)
 - [Code of conduct](CODE_OF_CONDUCT.md)
 - [Security policy](SECURITY.md)
+- [Privacy policy](PRIVACY.md)
 - [Changelog](CHANGELOG.md)
 - [Issue templates](.github/ISSUE_TEMPLATE)
 - [Pull request template](.github/pull_request_template.md)

@@ -10,6 +10,7 @@
   "homepage": "https://github.com/Beginnerinvestorhub/patent-tools",
   "license": "Apache-2.0",
   "icon": ".claude-plugin/icon.png",
+  "privacyPolicyUrl": "https://github.com/Beginnerinvestorhub/patent-tools/blob/main/PRIVACY.md",
   "userConfig": {
     "uspto_odp_api_key": {
       "type": "string",
