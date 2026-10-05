@@ -1,0 +1,25 @@
+# Copyright 2026 Kevin Ringler
+# SPDX-License-Identifier: Apache-2.0
+#
+# Weekly dependency update PRs for the connector (npm), the drawing
+# skill's PDF builder (pip) and the Actions workflows themselves.
+version: 2
+
+updates:
+  - package-ecosystem: npm
+    directory: /connector
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: pip
+    directory: /skills/patent-drawing/scripts
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5

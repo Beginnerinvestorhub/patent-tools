@@ -1,0 +1,15 @@
+# Copyright 2026 Kevin Ringler
+# SPDX-License-Identifier: Apache-2.0
+
+# Normalize text files to LF in the repo; let Git decide per checkout.
+* text=auto
+
+# Binary assets and packed extensions are never line-ending normalized.
+*.png binary
+*.mcpb binary
+*.pdf binary
+
+# Keep generated and bundled code out of the language stats and diffs.
+skills/patent-drawing/scripts/vendor/** linguist-vendored
+connector/dist/** linguist-generated
+docs/** linguist-documentation
