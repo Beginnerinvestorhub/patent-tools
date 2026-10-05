@@ -4,6 +4,19 @@ All notable changes to the patent drawing skill. Versions follow semantic
 versioning: MAJOR for changes that alter outputs or required inputs, MINOR
 for new capabilities, PATCH for fixes and rule text corrections.
 
+## 1.2.2 (2026-10-05)
+
+### Fixed
+- `check_drawing.py` converts SVG/CSS length strings (mm, cm, in, pt, pc,
+  px and unitless) to physical millimeters, so sheets whose root
+  width/height or font sizes use px or other units are checked at their
+  real physical size instead of being misread. viewBox falls back to px
+  at 96 dpi only when no physical size is given.
+- `check_drawing.py` text/line clash detection now uses the scaled
+  physical geometry, fixing false clashes and misses on sheets that mix
+  units.
+- `check_numerals.py` minor detection corrections.
+
 ## 1.2.1 (2026-10-04)
 
 ### Changed

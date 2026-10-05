@@ -6,7 +6,7 @@ description: >
   design, plant and PCT/EPO guidance.
 license: Apache-2.0
 metadata:
-  version: "1.2.1"
+  version: "1.2.2"
   author: Kevin Ringler
 ---
 

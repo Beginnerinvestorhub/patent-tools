@@ -6,19 +6,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-### Added
-- Repository-level contribution and community standards documentation
-- GitHub issue templates for bugs, feature requests, and usage questions
-- Pull request template for consistent review workflow
-- Root-level security policy and community guidance
-- README badges and documentation links for project visibility
-
-### Changed
-- Improved repository professionalism and contributor onboarding
-
-### Fixed
-- Clarified public project documentation and support paths
-
 ## [1.3.1] - 2026-10-05
 
 ### Added
@@ -26,6 +13,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Patent drawing skill for drafting and checking USPTO-compliant figures
 - CI workflow for offline validation
 - Documentation for installation, setup, and usage
+- Repository-level contribution and community standards documentation
+- GitHub issue templates for bugs, feature requests, and usage questions
+- Pull request template for consistent review workflow
+- Root-level security policy and community guidance
+- README badges and documentation links for project visibility
+
+### Fixed
+- Patent drawing checker converts SVG/CSS length units (mm, cm, in, pt,
+  pc, px) to physical millimeters, fixing sheet size and text/line clash
+  detection on sheets that use px or mixed units
+- Clarified public project documentation and support paths
 
 ### Changed
 - Consolidated patent research and legal-drafting tooling into one repository

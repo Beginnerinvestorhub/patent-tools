@@ -13,7 +13,7 @@ It runs locally inside Claude Desktop as a desktop extension. You bring your own
 ## Setup
 
 1. Get a free API key: sign in at [data.uspto.gov](https://data.uspto.gov), open **My ODP**, and copy your key.
-2. Install `patent-connector-1.3.1.mcpb` by double clicking it, or drag it into Claude Desktop under **Settings > Extensions**.
+2. Download [patent-connector-1.3.1.mcpb](https://github.com/Beginnerinvestorhub/patent-tools/releases/latest/download/patent-connector-1.3.1.mcpb) from the latest release, then install it by double clicking it, or drag it into Claude Desktop under **Settings > Extensions**.
 3. Paste your key when prompted. Claude Desktop saves it in the extension's settings on your computer. The extension sends it only over HTTPS to uspto.gov and never shows it to Claude. You can regenerate the key any time in My ODP.
 
 Requires Claude Desktop with Node.js 18 or newer (bundled with Claude Desktop).
