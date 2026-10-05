@@ -14,4 +14,4 @@ svgelements>=1.9.6
 svglib>=2.2
 reportlab>=5.0
 # optional: PDF verification and PNG previews in build_pdf.py
-pymupdf>=1.27
+pymupdf>=1.28.2
