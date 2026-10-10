@@ -34,15 +34,17 @@ How the key reaches the connector depends on how you installed it:
   when you install the extension and keeps it in the extension's settings
   (Settings > Extensions > Patent Connector). You do not need an
   environment variable.
-* **Plugin (Claude Code, and other hosts that read `.mcp.json` or
-  `mcp_config.json`).** The plugin reads the key from the
+* **Claude Code plugin (`.mcp.json`).** Claude Code prompts for the key
+  when you enable the plugin (the sensitive `uspto_odp_api_key` option) and
+  stores it in secure storage. No environment variable is needed.
+* **Other hosts (`mcp_config.json`).** The connector reads the
   `USPTO_ODP_API_KEY` environment variable of the app or terminal that
   starts the host. Set it once as shown below.
 
 Get the key first: sign in at [data.uspto.gov](https://data.uspto.gov),
 open **My ODP**, and copy it.
 
-**Claude Code settings.json (easiest for the plugin)**
+**Claude Code settings.json (alternative to the prompt)**
 
 Add the key to `~/.claude/settings.json`:
 
@@ -83,6 +85,7 @@ Restart Claude Code once after saving.
    ```
    export USPTO_ODP_API_KEY="your_key_here"
    ```
+
 2. Open a new terminal (or run `source ~/.zshrc`), then start Claude Code
    from that terminal. Apps started from the Dock or a launcher may not read
    your shell profile; start them from a terminal if the key is not found.
@@ -107,7 +110,7 @@ folder. `.env` is ignored by git. The plugin and the extension do not read
 ## Tools
 
 | Tool | What it does |
-|---|---|
+| --- | --- |
 | `search_patents` | Searches applications and granted patents filed 2001 onward. Supports all words (default), exact phrase, any word, and advanced field syntax. Filters by filing date range and granted only. Sorts by relevance, newest or oldest. Pages through results. |
 | `get_patent` | Returns a concise summary of one application: title, status, dates, patent number, inventors, applicants, assignees, CPC classes, examiner, art unit, parent applications and recent events. |
 | `get_patent_documents` | Lists the key documents in the file wrapper (claims, specification, abstract, drawings, office actions, examiner citations, allowance) and shows which have readable text. Use `filter: "all"` for everything. |
@@ -158,7 +161,7 @@ the Open Data Portal.
 ## Troubleshooting
 
 | Message | Fix |
-|---|---|
+| --- | --- |
 | "No USPTO API key is configured" | Desktop extension: add your key under Settings > Extensions > Patent Connector. Plugin: set the `USPTO_ODP_API_KEY` environment variable and fully restart the app (see [Set your USPTO API key](#set-your-uspto-api-key)). |
 | "USPTO rejected the API key" | Check the key for typos, or generate a new one in My ODP. |
 | "not a valid USPTO application number" | Use the application number (for example 16123456) in `applicationNumber`, or pass a granted patent number as `patentNumber` instead. |

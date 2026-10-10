@@ -41,8 +41,8 @@ Pick the channel you use:
   [skills/patent-drawing/README.md](skills/patent-drawing/README.md).
 * **Claude Code.** Install the whole repo as a plugin — the
   `.claude-plugin/` manifest also wires up the Patent Connector MCP
-  server (requires `node` and a `USPTO_ODP_API_KEY` environment
-  variable):
+  server (requires `node` and your free USPTO ODP API key, which Claude
+  Code asks for when you enable the plugin):
 
   ```
   claude plugin marketplace add Beginnerinvestorhub/patent-tools
@@ -53,9 +53,9 @@ Pick the channel you use:
   (all projects) or `.claude/skills/` (one project). The plugin starts
   the committed single file
   bundle `connector/dist/patent-connector.mjs`, which already contains every
-  dependency, so no `npm install` is needed. Set `USPTO_ODP_API_KEY` in the
-  environment that starts Claude Code; the plugin has no settings screen
-  for it. See [Set your USPTO API key](#set-your-uspto-api-key).
+  dependency, so no `npm install` is needed. Enter your key when Claude Code
+  prompts for it (stored in secure storage). See
+  [Set your USPTO API key](#set-your-uspto-api-key).
 * **Devin CLI / Desktop / cloud.** `devin plugins install
   Beginnerinvestorhub/patent-tools`. Installs the skill and the connector
   MCP server together.
@@ -68,14 +68,12 @@ The connector needs your own free key from
 * **Claude Desktop extension (`.mcpb`):** Claude Desktop asks for the key
   when you install it and keeps it in the extension's settings. Nothing
   else to do.
-* **Plugin (Claude Code and other hosts using `.mcp.json` or
-  `mcp_config.json`):** the plugin reads the `USPTO_ODP_API_KEY`
-  environment variable. Set it once:
-  * **Claude Code (easiest):** when the plugin is enabled, Claude Code
-    prompts for the key and stores it in secure storage. You can also
-    set it later via the plugin's configure options. The older paths
-    still work: `"env": {"USPTO_ODP_API_KEY": "your_key_here"}` in
-    `~/.claude/settings.json`, or the OS environment variable below.
+* **Claude Code plugin (`.mcp.json`):** when the plugin is enabled,
+  Claude Code prompts for the key (the sensitive `uspto_odp_api_key`
+  option) and stores it in secure storage. You can change it later via
+  the plugin's configure options. Nothing else to do.
+* **Other hosts using `mcp_config.json`:** that file reads the
+  `USPTO_ODP_API_KEY` environment variable. Set it once:
   * **Windows:** run `setx USPTO_ODP_API_KEY "your_key_here"` in Command
     Prompt or PowerShell, or add it under System Properties > Environment
     Variables > User variables > New. Then close every terminal and quit
