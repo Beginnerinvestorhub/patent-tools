@@ -5,16 +5,11 @@
 // Local MCP server for the USPTO Open Data Portal (ODP) API at api.uspto.gov.
 // Each user supplies their own free ODP API key (https://data.uspto.gov, My ODP).
 
-import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import {
-  ListToolsRequestSchema,
-  CallToolRequestSchema,
-} from "@modelcontextprotocol/sdk/types.js";
 import { PdfDocument, PdfError, UnsupportedImageError, extractPageImage } from "./lib/pdf.js";
 import { downscale, orient, encodePngGray } from "./lib/raster.js";
+import { serveStdio } from "./lib/mcp.js";
 
-const VERSION = "1.3.1";
+const VERSION = "1.4.0";
 const API_KEY = (process.env.USPTO_ODP_API_KEY || "").trim();
 const BASE_URL = "https://api.uspto.gov/api/v1";
 const TIMEOUT_MS = 30000;
@@ -28,7 +23,7 @@ class UserError extends Error {}
 function authHeaders() {
   if (!API_KEY) {
     throw new UserError(
-      "No USPTO API key is configured. Get a free key at https://data.uspto.gov (sign in, then My ODP). In Claude Desktop, enter it in this extension's settings. When running as a plugin (Claude Code and other hosts), set the USPTO_ODP_API_KEY environment variable and fully restart the app."
+      "No USPTO API key is configured. Get a free key at https://data.uspto.gov (sign in, then My ODP). Enter it in this extension's or plugin's settings (Claude Code asks for it when you enable the plugin); other MCP hosts pass it as USPTO_ODP_API_KEY. Then restart the app."
     );
   }
   return { "x-api-key": API_KEY };
@@ -37,7 +32,7 @@ function authHeaders() {
 function explainHttpError(status, bodyText, notFoundMessage) {
   if (status === 404) return notFoundMessage || "No matching records found at USPTO.";
   if (status === 401 || status === 403)
-    return "USPTO rejected the API key (HTTP " + status + "). Check the key in this extension's settings, or the USPTO_ODP_API_KEY environment variable when running as a plugin; keys come from https://data.uspto.gov under My ODP.";
+    return "USPTO rejected the API key (HTTP " + status + "). Check the key in this extension's or plugin's settings; keys come from https://data.uspto.gov under My ODP.";
   if (status === 429)
     return "USPTO rate limit reached (HTTP 429). Wait a minute and try again, or make fewer requests in a row.";
   if (status === 400)
@@ -60,17 +55,12 @@ const MAX_BYTES = 25 * 1024 * 1024; // cap any single response at 25 MB
 const RETRY_STATUSES = new Set([429, 502, 503, 504]);
 const RETRY_DELAYS_MS = [1000, 3000];
 const RETRY_AFTER_CAP_MS = 10000;
-// Test only knob: scales every wait (0 makes the offline tests instant).
-const RETRY_SCALE = (() => {
-  const n = Number(process.env.PATENT_CONNECTOR_RETRY_SCALE);
-  return Number.isFinite(n) && n >= 0 && n <= 1 ? n : 1;
-})();
 
 function retryDelayMs(res, attempt) {
   const header = (res.headers.get("retry-after") || "").trim();
   let ms = RETRY_DELAYS_MS[Math.min(attempt, RETRY_DELAYS_MS.length - 1)];
   if (/^\d+(\.\d+)?$/.test(header)) ms = Math.min(Number(header) * 1000, RETRY_AFTER_CAP_MS);
-  return ms * RETRY_SCALE;
+  return ms;
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -875,16 +865,8 @@ const HANDLERS = {
 // Server wiring
 // ---------------------------------------------------------------------------
 
-const server = new Server(
-  { name: "patent-connector", version: VERSION },
-  { capabilities: { tools: {} } }
-);
-
-server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));
-
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
-  const { name, arguments: args = {} } = request.params;
-  const handler = HANDLERS[name];
+async function callTool(name, args) {
+  const handler = Object.hasOwn(HANDLERS, name) ? HANDLERS[name] : null;
   try {
     if (!handler) throw new UserError("Unknown tool: " + name);
     const data = await handler(args);
@@ -894,6 +876,6 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const message = err instanceof UserError ? err.message : "Unexpected error: " + (err?.message || String(err));
     return { content: [{ type: "text", text: "Error: " + message }], isError: true };
   }
-});
+}
 
-await server.connect(new StdioServerTransport());
+serveStdio({ name: "patent-connector", version: VERSION, tools: TOOLS, callTool });

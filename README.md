@@ -19,8 +19,8 @@ patent drawings.
 
 ## What's inside
 
-Versions: Patent Connector (USPTO) 1.3.1, Patent Drawing skill 1.2.2,
-plugin 1.3.1.
+Versions: Patent Connector (USPTO) 1.4.0, Patent Drawing skill 1.2.2,
+plugin 1.4.0.
 
 | Component | What it is |
 |---|---|
@@ -51,9 +51,8 @@ Pick the channel you use:
 
   Or copy just `skills/patent-drawing/` into `~/.claude/skills/`
   (all projects) or `.claude/skills/` (one project). The plugin starts
-  the committed single file
-  bundle `connector/dist/patent-connector.mjs`, which already contains every
-  dependency, so no `npm install` is needed. Enter your key when Claude Code
+  `connector/index.js` directly. The server has no dependencies, so no
+  `npm install` or build step is needed. Enter your key when Claude Code
   prompts for it (stored in secure storage). See
   [Set your USPTO API key](#set-your-uspto-api-key).
 * **Devin CLI / Desktop / cloud.** `devin plugins install
@@ -109,7 +108,6 @@ dialog walkthrough, is in
 .mcp.json                    Plugin-provided Patent Connector MCP server
 .github/workflows/ci.yml     Offline tests on every push and pull request
 connector/                   Patent Connector (USPTO) MCP server + .mcpb source
-connector/dist/              Single file bundle the plugin runs (npm run build)
 skills/patent-drawing/       Patent Drawing skill (self-contained; zip this
                              folder for Claude.ai or copy it for Claude Code)
 ```
@@ -121,21 +119,20 @@ skill folder and the connector folder are each distributable on their own.
 
 ```
 cd connector
-npm ci
+npm ci                                # test client only; the server has no dependencies
 npm run test:offline                  # security, retry and feature tests (no key)
 node --env-file=../.env test/smoke.mjs   # live test suite (needs a free key)
-npm run build                         # rebuilds dist/patent-connector.mjs
-npm run test:bundle                   # offline tests against the bundle
-npm run pack                          # rebuilds ../patent-connector-1.3.1.mcpb
+npm run check:start                   # server starts on its own and lists all tools
+npm run pack                          # rebuilds ../patent-connector-1.4.0.mcpb
 
 cd ../skills/patent-drawing
 pip install -r scripts/requirements.txt   # only the PDF builder needs packages
 python tests/run_script_tests.py      # automated script tests
 ```
 
-Rebuild and commit `connector/dist/patent-connector.mjs` whenever
-`connector/index.js`, `connector/lib/` or the dependencies change; the plugin runs the bundle,
-not `index.js`. See [connector/README.md](connector/README.md#the-plugin-bundle).
+The plugin, the desktop extension and `npx patent-connector` all run
+`connector/index.js` as is. There is no build step and nothing to rebuild.
+See [connector/README.md](connector/README.md#no-dependencies).
 
 ## Security and privacy
 

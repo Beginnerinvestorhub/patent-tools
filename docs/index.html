@@ -90,7 +90,7 @@
   <h2>What's inside</h2>
   <div class="cards">
     <div class="card">
-      <h3>Patent Connector (USPTO) 1.3.1</h3>
+      <h3>Patent Connector (USPTO) 1.4.0</h3>
       <p>An MCP server and Claude Desktop extension. Search patents and
       applications, read the actual text of claims, abstracts and
       specifications, and view drawing sheets as images — including CCITT
@@ -145,7 +145,8 @@
   <div class="install">
     <h3>Claude Code</h3>
     <p>Installs the drawing skill and the connector together. Requires
-    Node.js 18+ and a <code>USPTO_ODP_API_KEY</code> environment variable.</p>
+    Node.js 18+ and your free USPTO API key, which Claude Code asks for
+    when you enable the plugin.</p>
     <pre><code>claude plugin marketplace add Beginnerinvestorhub/patent-tools
 claude plugin install patent-tools@patent-tools</code></pre>
   </div>
@@ -164,9 +165,7 @@ claude plugin install patent-tools@patent-tools</code></pre>
   <p class="note">The connector needs your own free key from
   <a href="https://data.uspto.gov">data.uspto.gov</a> (sign in, then
   My&nbsp;ODP). Claude Desktop asks for it during install. Claude Code
-  users add it under <code>"env"</code> in
-  <code>~/.claude/settings.json</code> or as a
-  <code>USPTO_ODP_API_KEY</code> environment variable — see the
+  asks for it when you enable the plugin and keeps it in secure storage. See the
   <a href="https://github.com/Beginnerinvestorhub/patent-tools#set-your-uspto-api-key">README</a>.
   Your key and queries go straight from your computer to
   api.uspto.gov — there are no servers in between.</p>

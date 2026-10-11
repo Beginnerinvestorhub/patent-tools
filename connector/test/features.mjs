@@ -4,7 +4,6 @@
 // server, against a simulated USPTO that serves a real USPTO drawings PDF),
 // plus direct tests of the PDF reader and PNG encoder.
 // Run: node test/features.mjs   (no API key or network needed)
-//      node test/features.mjs --bundle   (server tests against dist/patent-connector.mjs)
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -17,9 +16,7 @@ import { downscale, orient, encodePngGray, crc32 } from "../lib/raster.js";
 import { buildImagePdf, bilevelScan } from "./pdf-builder.mjs";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const SERVER = process.argv.includes("--bundle")
-  ? path.join(here, "..", "dist", "patent-connector.mjs")
-  : path.join(here, "..", "index.js");
+const SERVER = path.join(here, "..", "index.js");
 console.log("Server under test: " + path.relative(path.join(here, ".."), SERVER));
 const FIXTURE = path.join(here, "fixtures", "drw-18483359.pdf");
 const KEY = "TEST_KEY_DO_NOT_LEAK_7f3a";
@@ -90,7 +87,7 @@ async function session(scenario, fn) {
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: ["--import", pathToFileURL(path.join(here, "mock-fetch.mjs")).href, SERVER],
-    env: { ...process.env, USPTO_ODP_API_KEY: KEY, MOCK_SCENARIO: scenario, MOCK_LOG: log, PATENT_CONNECTOR_RETRY_SCALE: "0" },
+    env: { ...process.env, USPTO_ODP_API_KEY: KEY, MOCK_SCENARIO: scenario, MOCK_LOG: log, MOCK_RETRY_SCALE: "0" },
   });
   const client = new Client({ name: "features", version: "1.0.0" });
   await client.connect(transport);

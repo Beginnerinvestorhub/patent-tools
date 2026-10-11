@@ -11,11 +11,7 @@ import fs from "node:fs";
 import os from "node:os";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-// --bundle runs the same tests against the committed single file bundle
-// (dist/patent-connector.mjs, made by npm run build) instead of index.js.
-const SERVER = process.argv.includes("--bundle")
-  ? path.join(here, "..", "dist", "patent-connector.mjs")
-  : path.join(here, "..", "index.js");
+const SERVER = path.join(here, "..", "index.js");
 console.log("Server under test: " + path.relative(path.join(here, ".."), SERVER));
 let failures = 0;
 const check = (label, cond, extra = "") => {
@@ -30,7 +26,7 @@ async function run(scenario, scale = "0") {
   const transport = new StdioClientTransport({
     command: process.execPath,
     args: ["--import", pathToFileURL(path.join(here, "mock-fetch.mjs")).href, SERVER],
-    env: { ...process.env, USPTO_ODP_API_KEY: "TEST_KEY", MOCK_SCENARIO: scenario, MOCK_LOG: log, PATENT_CONNECTOR_RETRY_SCALE: scale },
+    env: { ...process.env, USPTO_ODP_API_KEY: "TEST_KEY", MOCK_SCENARIO: scenario, MOCK_LOG: log, MOCK_RETRY_SCALE: scale },
   });
   const client = new Client({ name: "retry", version: "1.0.0" });
   await client.connect(transport);

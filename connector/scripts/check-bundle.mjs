@@ -2,20 +2,20 @@
 // Copyright 2026 Kevin Ringler
 // SPDX-License-Identifier: Apache-2.0
 //
-// Starts a server file (default dist/patent-connector.mjs) with plain JSON RPC
+// Starts a server file (default index.js) with plain JSON RPC
 // over stdio, using only Node built ins, and checks that it starts, lists all
 // tools with read only annotations, and answers a tool call without an API
 // key with the plain English "no key" message (no network is used). Run it on
-// a copy of the bundle in a folder with no node_modules to prove the bundle
-// is self contained.
+// a copy of index.js and lib/ in a folder with no node_modules to prove the
+// server has no dependencies.
 //
-// Usage: node scripts/check-bundle.mjs [path/to/patent-connector.mjs]
+// Usage: node scripts/check-bundle.mjs [path/to/index.js]
 import { spawn } from "node:child_process";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-const file = path.resolve(process.argv[2] || path.join(here, "..", "dist", "patent-connector.mjs"));
+const file = path.resolve(process.argv[2] || path.join(here, "..", "index.js"));
 const EXPECTED = ["get_document_text", "get_drawings", "get_patent", "get_patent_documents", "search_patents"];
 
 const env = { ...process.env };

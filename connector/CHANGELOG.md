@@ -2,6 +2,23 @@
 
 Versions follow semantic versioning.
 
+## 1.4.0 (2026-10-10)
+
+### Changed
+- No npm dependencies. The MCP SDK is replaced by `lib/mcp.js`, a small
+  server written for this connector that handles `initialize`, `ping`,
+  `tools/list` and `tools/call` over stdio. The plugin now runs `index.js`
+  directly instead of the 727 KB esbuild bundle in `dist/`, which was mostly
+  bundled SDK, zod and ajv code. `dist/`, `THIRD_PARTY_NOTICES.txt`,
+  `npm run build` and the bundle tests are gone.
+- The "no key" and "key rejected" messages point to the plugin or extension
+  settings instead of telling users to set an environment variable by hand.
+
+### Removed
+- `PATENT_CONNECTOR_RETRY_SCALE`. The server now reads only
+  `USPTO_ODP_API_KEY` from its environment. The offline tests scale the
+  retry waits inside `test/mock-fetch.mjs` (`MOCK_RETRY_SCALE`) instead.
+
 ## 1.3.1 (2026-10-04)
 
 ### Fixed

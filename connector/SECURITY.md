@@ -25,8 +25,7 @@ You can expect an acknowledgement within 7 days.
   content stream size, and every parse problem becomes a plain English
   message. PDFs and images are processed in memory only and never written
   to disk. `test/features.mjs` covers these limits.
-* The plugin runs `dist/patent-connector.mjs`, a bundle of `index.js` and
-  the exact dependency versions in `package-lock.json`, built with a pinned
-  esbuild version (`npm run build`). It contains no API key or other secret;
-  `npm run test:bundle` runs the offline security tests against it. Rebuild
-  it whenever a dependency gets a security fix.
+* The server has no npm dependencies and no build step: the plugin and the
+  desktop extension run `index.js` and `lib/` as written, using only Node's
+  built in modules. It contains no API key or other secret, and the only
+  environment value it reads is `USPTO_ODP_API_KEY`.

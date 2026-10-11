@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-10-10
+
+### Changed
+- Patent Connector has no npm dependencies: a small built in MCP server
+  (`connector/lib/mcp.js`) replaces the SDK, and the plugin runs
+  `connector/index.js` directly instead of the bundled `connector/dist/`
+- Key error messages point to the plugin or extension settings
+
+### Removed
+- `connector/dist/` bundle, its third party notices and the build step
+- `PATENT_CONNECTOR_RETRY_SCALE` test setting from the shipped server
+
 ## [1.3.1] - 2026-10-05
 
 ### Added

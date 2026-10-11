@@ -9,6 +9,16 @@ import { fileURLToPath } from "node:url";
 import { buildImagePdf, bilevelScan } from "./pdf-builder.mjs";
 
 const scenario = process.env.MOCK_SCENARIO;
+
+// MOCK_RETRY_SCALE scales the server's retry waits (its only setTimeout use;
+// the request timeout uses AbortSignal.timeout). 0 makes them instant and
+// 0.01 turns 10 s into 100 ms. This lives here, not in index.js, so the
+// shipped server reads nothing but USPTO_ODP_API_KEY from its environment.
+const retryScale = Number(process.env.MOCK_RETRY_SCALE ?? "0");
+if (Number.isFinite(retryScale) && retryScale >= 0 && retryScale < 1) {
+  const realSetTimeout = globalThis.setTimeout;
+  globalThis.setTimeout = (fn, ms, ...rest) => realSetTimeout(fn, (Number(ms) || 0) * retryScale, ...rest);
+}
 const log = process.env.MOCK_LOG;
 const XML = '<?xml version="1.0"?><uspat:ClaimsDocument xmlns:uspat="u"><uspat:Claims><uscom:P xmlns:uscom="c">1. A method comprising receiving data.</uscom:P></uspat:Claims></uspat:ClaimsDocument>';
 

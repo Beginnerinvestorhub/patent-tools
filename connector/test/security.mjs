@@ -10,11 +10,7 @@ import fs from "node:fs";
 import os from "node:os";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
-// --bundle runs the same tests against the committed single file bundle
-// (dist/patent-connector.mjs, made by npm run build) instead of index.js.
-const SERVER = process.argv.includes("--bundle")
-  ? path.join(here, "..", "dist", "patent-connector.mjs")
-  : path.join(here, "..", "index.js");
+const SERVER = path.join(here, "..", "index.js");
 console.log("Server under test: " + path.relative(path.join(here, ".."), SERVER));
 const KEY = "TEST_KEY_DO_NOT_LEAK";
 let failures = 0;

@@ -21,9 +21,9 @@ Requires Claude Desktop with Node.js 18 or newer (bundled with Claude Desktop).
 ### As a plugin (Claude Code)
 
 Installing the `patent-tools` repository as a plugin starts this server
-from the single file bundle `dist/patent-connector.mjs`, so no `npm install`
-is needed; Node.js 18 or newer must be on your PATH. The plugin has no
-settings screen for the key; see [Set your USPTO API key](#set-your-uspto-api-key)
+from `index.js`. It has no dependencies, so no `npm install` is needed;
+Node.js 18 or newer must be on your PATH. Claude Code asks for your key
+when you enable the plugin; see [Set your USPTO API key](#set-your-uspto-api-key)
 below. Without it the tools answer "No USPTO API key is configured".
 
 ## Set your USPTO API key
@@ -162,7 +162,7 @@ the Open Data Portal.
 
 | Message | Fix |
 | --- | --- |
-| "No USPTO API key is configured" | Desktop extension: add your key under Settings > Extensions > Patent Connector. Plugin: set the `USPTO_ODP_API_KEY` environment variable and fully restart the app (see [Set your USPTO API key](#set-your-uspto-api-key)). |
+| "No USPTO API key is configured" | Desktop extension: add your key under Settings > Extensions > Patent Connector. Claude Code plugin: enter the key in the plugin's settings and restart. Other hosts: set the `USPTO_ODP_API_KEY` environment variable and fully restart the app (see [Set your USPTO API key](#set-your-uspto-api-key)). |
 | "USPTO rejected the API key" | Check the key for typos, or generate a new one in My ODP. |
 | "not a valid USPTO application number" | Use the application number (for example 16123456) in `applicationNumber`, or pass a granted patent number as `patentNumber` instead. |
 | "does not look like a US patent number" | Write it like 12,399,789 or US 12,399,789 B1. Application numbers go in `applicationNumber`. |
@@ -177,13 +177,11 @@ See [PRIVACY.md](PRIVACY.md). In short: the extension collects nothing, has no s
 ## Development
 
 ```
-npm ci
+npm ci                                # test client only; the server has no dependencies
 npm run test:offline                  # security, retry and feature tests (no key, no network)
 node --env-file=../.env test/smoke.mjs   # live test suite (needs a key in ../.env)
-npm run build                         # rebuilds dist/patent-connector.mjs (plugin bundle)
-npm run test:bundle                   # offline tests against the bundle
-npm run check:bundle                  # bundle starts on its own and lists all tools
-npm run pack                          # builds ../patent-connector-1.3.1.mcpb
+npm run check:start                   # server starts on its own and lists all tools
+npm run pack                          # builds ../patent-connector-1.4.0.mcpb
 ```
 
 The offline suites start the server with a simulated USPTO
@@ -196,25 +194,17 @@ live smoke test needs a key and runs only on your computer
 (`node --env-file=../.env test/smoke.mjs`, or `node test/smoke.mjs` with
 `USPTO_ODP_API_KEY` already set).
 
-### The plugin bundle
+### No dependencies
 
-The plugin runs `dist/patent-connector.mjs`, one file that holds `index.js`
-and all of its dependencies, because the repository does not commit
-`node_modules` and a plugin installed from git gets no `npm install`.
-`index.js` stays the source. After any change to `index.js` or to the
-dependencies, rebuild and commit the bundle together with the change:
-
-```
-npm ci            # exact versions from package-lock.json
-npm run build     # esbuild (pinned, run through npx): node 18, ESM
-npm run test:bundle
-```
-
-The build also writes `dist/THIRD_PARTY_NOTICES.txt` with the license of
-every bundled package. The bundle contains no API key: the key is read from
-the `USPTO_ODP_API_KEY` environment variable at run time. The `.mcpb`
-desktop extension does not use the bundle; it packs `index.js` and `lib/`
-with `node_modules` as before (`dist/` is in `.mcpbignore`).
+The server is plain, readable source with no npm dependencies: `index.js`
+(the tools), `lib/mcp.js` (a small MCP server over stdio that handles
+`initialize`, `ping`, `tools/list` and `tools/call`), `lib/pdf.js`,
+`lib/ccitt.js` and `lib/raster.js`. It uses only Node's built in modules.
+The plugin, the `.mcpb` desktop extension and `npx patent-connector` all run
+`index.js` as is, so there is no build step and nothing to keep in sync.
+`npm ci` installs only the MCP SDK client that the offline tests use to talk
+to the server; it is a dev dependency and never shipped. The only value the
+server reads from its environment is `USPTO_ODP_API_KEY`.
 
 ## Security
 
