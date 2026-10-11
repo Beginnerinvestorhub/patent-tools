@@ -32,7 +32,7 @@ plugin 1.4.0.
 Pick the channel you use:
 
 * **Claude Desktop.** Download
-  [patent-connector-1.3.1.mcpb](https://github.com/Beginnerinvestorhub/patent-tools/releases/latest/download/patent-connector-1.3.1.mcpb)
+  [patent-connector-1.4.0.mcpb](https://github.com/Beginnerinvestorhub/patent-tools/releases/latest/download/patent-connector-1.4.0.mcpb)
   from the latest release, then double click it (or drag it
   into **Settings > Extensions**). See
   [connector/README.md](connector/README.md) for setup and your API key.
