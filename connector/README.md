@@ -57,12 +57,16 @@ ODP.
 | `get_document_text` | Downloads a document and returns plain text. Defaults to the latest claims. Also handles abstracts, specifications and remarks. Long documents come back in pages. |
 | `get_drawings` | Shows the drawing sheets as images so Claude can look at the figures. Uses the most recent drawings document (DRW) unless you give a `documentId`. Returns pages 1 to 3 by default (`pages` takes `"2"`, `"1-3"` or `"2,4"`; at most 5 per call) at 1600 pixels on the longest side (`maxDimension` 600 to 2400). |
 
+| `search_office_actions` | Searches the full text of examiner office actions (rejections, allowances and other actions) in applications filed 2001 onward. Filter by application or patent number, action type (`documentCode` such as CTNF, CTFR or NOA), rejection type (`101`, `102`, `103`, `112`, `DoublePatent`, `Other`), art unit and mailing date. Each result has a short excerpt and an `officeActionId`; the result also counts rejection types across all matches. |
+| `get_office_action` | Returns the full text of one office action: the examiner's rejections or reasons for allowance and the prior art relied on. Give an `officeActionId`, or an application or patent number for its most recent office action (optionally of one `documentCode`), with a list of its other office actions. Long actions come back in pages. |
+| `search_petition_decisions` | Searches final petition decisions from the Office of Petitions and the Director (reviving abandoned applications, correcting inventorship or priority, accepting late fees and more) by text, application or patent number, outcome (GRANTED, DENIED, DISMISSED) and decision date. Each result shows the petition type, outcome, rules and statutes cited, an excerpt and the decision letters, with a Patent Center link. USPTO is still loading older decisions, so coverage before 2022 may be incomplete. |
+
 All tools are read only. Nothing is ever filed, changed or submitted at USPTO.
 
 ### Application number or patent number
 
-`get_patent`, `get_patent_documents`, `get_document_text` and `get_drawings`
-take either `applicationNumber` (for example `18483359` or `18/483,359`) or
+`get_patent`, `get_patent_documents`, `get_document_text`, `get_drawings` and
+`get_office_action` take either `applicationNumber` (for example `18483359` or `18/483,359`) or
 `patentNumber`, never both. A patent number may be written the way it
 appears on the patent: `12399789`, `12,399,789`, `US12399789` or
 `US 12,399,789 B1` (the kind code is ignored). The connector looks the

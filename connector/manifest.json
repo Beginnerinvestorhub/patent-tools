@@ -2,9 +2,9 @@
   "manifest_version": "0.3",
   "name": "patent-connector",
   "display_name": "Patent Connector (USPTO)",
-  "version": "1.4.0",
-  "description": "Search USPTO patents and applications, read their claims, abstracts and specifications, and view their drawings, using your own free USPTO API key.",
-  "long_description": "Patent Connector gives Claude live access to the USPTO Open Data Portal (ODP). Search applications and granted patents by keyword, exact phrase or field, with filing date filters for prior art cutoffs. Pull a clean summary of any application or granted patent (by application number or patent number), list the documents in its file wrapper, read the actual text of claims, abstracts and specifications so Claude can compare them against your invention, and view the drawing sheets as images.\n\nRequires a free API key from data.uspto.gov (sign in, then My ODP). Claude Desktop saves your key in the extension settings on your computer. The extension sends it only over HTTPS to uspto.gov hosts and never shows it to Claude. The extension has no servers of its own and collects no data.\n\nThis tool helps with research. It is not legal advice; have a registered patent practitioner review any search or filing.",
+  "version": "1.5.0",
+  "description": "Search USPTO patents, applications, office actions and petition decisions, read claims and specifications, and view drawings, using your own free USPTO API key.",
+  "long_description": "Patent Connector gives Claude live access to the USPTO Open Data Portal (ODP). Search applications and granted patents by keyword, exact phrase or field, with filing date filters for prior art cutoffs. Pull a clean summary of any application or granted patent (by application number or patent number), list the documents in its file wrapper, read the actual text of claims, abstracts and specifications so Claude can compare them against your invention, and view the drawing sheets as images. Search the full text of examiner office actions to see which rejections (101, 102, 103, 112) and prior art examiners used on similar inventions, read any office action in full, and search final petition decisions.\n\nRequires a free API key from data.uspto.gov (sign in, then My ODP). Claude Desktop saves your key in the extension settings on your computer. The extension sends it only over HTTPS to uspto.gov hosts and never shows it to Claude. The extension has no servers of its own and collects no data.\n\nThis tool helps with research. It is not legal advice; have a registered patent practitioner review any search or filing.",
   "author": {
     "name": "Kevin Ringler",
     "url": "https://github.com/Beginnerinvestorhub"
@@ -53,6 +53,18 @@
     {
       "name": "get_drawings",
       "description": "View the drawing sheets of an application or granted patent as images (PNG), a few pages per call."
+    },
+    {
+      "name": "search_office_actions",
+      "description": "Search the full text of USPTO office actions by words, application or patent number, action type, rejection type (101, 102, 103, 112), art unit and date, with counts of rejection types."
+    },
+    {
+      "name": "get_office_action",
+      "description": "Read the full text of one office action, by its ID or as the most recent office action in an application or granted patent."
+    },
+    {
+      "name": "search_petition_decisions",
+      "description": "Search final USPTO petition decisions by text, application or patent number, outcome and decision date."
     }
   ],
   "keywords": [
@@ -61,7 +73,9 @@
     "prior art",
     "intellectual property",
     "patent search",
-    "patent drawings"
+    "patent drawings",
+    "office actions",
+    "patent prosecution"
   ],
   "license": "Apache-2.0",
   "compatibility": {

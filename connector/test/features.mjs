@@ -115,7 +115,7 @@ async function session(scenario, fn) {
 await session("feat", async (call, client) => {
   const { tools } = await client.listTools();
   const names = tools.map((t) => t.name).sort();
-  check("5 tools listed", names.join(",") === "get_document_text,get_drawings,get_patent,get_patent_documents,search_patents", names.join(","));
+  check("8 tools listed", names.join(",") === "get_document_text,get_drawings,get_office_action,get_patent,get_patent_documents,search_office_actions,search_patents,search_petition_decisions", names.join(","));
   check(
     "every tool is annotated read only",
     tools.every((t) => t.annotations?.title && t.annotations.readOnlyHint === true && t.annotations.destructiveHint === false && t.annotations.idempotentHint === true && t.annotations.openWorldHint === true)

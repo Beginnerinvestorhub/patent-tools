@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const file = path.resolve(process.argv[2] || path.join(here, "..", "index.js"));
-const EXPECTED = ["get_document_text", "get_drawings", "get_patent", "get_patent_documents", "search_patents"];
+const EXPECTED = ["get_document_text", "get_drawings", "get_office_action", "get_patent", "get_patent_documents", "search_office_actions", "search_patents", "search_petition_decisions"];
 
 const env = { ...process.env };
 delete env.USPTO_ODP_API_KEY;

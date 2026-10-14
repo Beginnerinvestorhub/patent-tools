@@ -98,7 +98,7 @@ console.log("Using granted application " + granted + (granted === FALLBACK.grant
 const grantedFormatted = granted.length === 8 ? granted.slice(0, 2) + "/" + granted.slice(2, 5) + "," + granted.slice(5) : granted;
 
 const { tools } = await client.listTools();
-check("5 tools listed", tools.length === 5 && tools.some((t) => t.name === "get_drawings"), tools.map((t) => t.name).join(", "));
+check("8 tools listed", tools.length === 8 && ["get_drawings", "search_office_actions", "get_office_action", "search_petition_decisions"].every((n) => tools.some((t) => t.name === n)), tools.map((t) => t.name).join(", "));
 check("all tools annotated read only", tools.every((t) => t.annotations?.readOnlyHint === true && t.annotations?.title));
 
 let r = await call("search_patents", { query: "data isolation", limit: 3 });
@@ -178,6 +178,51 @@ r = await call("get_drawings", { patentNumber: "10,706,165", pages: "1", maxDime
   const faxInfo = faxImages.map((i) => pngInfo(i.data));
   check("get_drawings on a fax compressed patent (US 10,706,165) shows the page", !r.isError && faxImages.length === 1 && faxInfo[0] && Math.max(faxInfo[0].width, faxInfo[0].height) === 800 && !(r.json?.unreadablePages?.length), r.text.slice(0, 200));
 }
+
+// Office actions (US 10,902,286 is application 16123456: one CTNF, then an NOA).
+r = await call("search_office_actions", { applicationNumber: "16123456" });
+check(
+  "search_office_actions by application lists its actions, newest first",
+  !r.isError && r.json.totalMatches >= 2 && r.json.results.every((x) => x.applicationNumber === "16123456" && x.officeActionId) &&
+    r.json.results[0].date >= r.json.results[r.json.results.length - 1].date,
+  r.text.slice(0, 300)
+);
+r = await call("search_office_actions", { query: "wireless charging", matchMode: "phrase", rejectionType: "103", limit: 3 });
+check(
+  "search_office_actions text search with a 103 filter returns plain excerpts and rejection counts",
+  !r.isError && r.json.totalMatches > 0 && r.json.results.every((x) => x.rejectionTypes?.some((t) => /103/.test(t)) && x.excerpt && !/<span|<b>/.test(x.excerpt)) &&
+    r.json.rejectionTypeCounts && Object.keys(r.json.rejectionTypeCounts).some((k) => /103/.test(k)),
+  r.text.slice(0, 300)
+);
+const oaId = r.json?.results?.[0]?.officeActionId;
+if (oaId) {
+  r = await call("get_office_action", { officeActionId: oaId, maxChars: 3000 });
+  check("get_office_action by id returns the full text in pages", !r.isError && r.json.totalChars > 1000 && r.json.text.length === 3000 && r.json.nextStartChar === 3000 && /103/.test(r.json.text), r.text.slice(0, 200));
+}
+r = await call("get_office_action", { patentNumber: "10,902,286", documentCode: "CTNF", maxChars: 2000 });
+check(
+  "get_office_action by patent number and CTNF reads the non final rejection",
+  !r.isError && r.json.applicationNumber === "16123456" && r.json.documentCode === "CTNF" && r.json.rejectionTypes?.some((t) => /102/.test(t)) && r.json.text.length > 500,
+  r.text.slice(0, 300)
+);
+r = await call("get_office_action", { applicationNumber: "16123456" });
+check("get_office_action by application lists the other office actions", !r.isError && r.json.otherOfficeActions?.length >= 1, r.text.slice(0, 200));
+
+// Petition decisions.
+r = await call("search_petition_decisions", { query: "revive unintentional", outcome: "granted", limit: 3 });
+check(
+  "search_petition_decisions finds granted revival petitions with documents",
+  !r.isError && r.json.totalMatches > 0 && r.json.results.every((x) => x.outcome === "GRANTED" && x.applicationNumber && x.patentCenterUrl) &&
+    r.json.results.some((x) => x.decisionDocuments?.length),
+  r.text.slice(0, 300)
+);
+const petApp = r.json?.results?.[0]?.applicationNumber;
+if (petApp) {
+  r = await call("search_petition_decisions", { applicationNumber: petApp });
+  check("search_petition_decisions by application", !r.isError && r.json.results.length > 0 && r.json.results.every((x) => x.applicationNumber === petApp), r.text.slice(0, 200));
+}
+r = await call("search_petition_decisions", { query: "zzqqxxnonexistentterm" });
+check("petition search with no results is not an error", !r.isError && r.json.totalMatches === 0, r.text.slice(0, 200));
 
 await client.close();
 console.log(failures ? "\n" + failures + " FAILED" : "\nALL PASSED");
