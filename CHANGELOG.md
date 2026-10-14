@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+- Patent Connector 1.5.0: `search_office_actions`, `get_office_action` and
+  `search_petition_decisions`, using the USPTO Open Data Portal Office
+  Actions and Petition Decisions datasets (see `connector/CHANGELOG.md`)
+
 ### Changed
 - The Claude Code marketplace installs the plugin from a slim `release`
   branch instead of the whole repository. A new workflow

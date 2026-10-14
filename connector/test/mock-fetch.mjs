@@ -102,13 +102,74 @@ function featFetch(url, init, json) {
   return new Response("unexpected", { status: 500 });
 }
 
+// ---------------------------------------------------------------------------
+// "res" scenario (test/research.mjs): office actions and petition decisions.
+// ---------------------------------------------------------------------------
+const OA = [
+  { officeActionRecordIdentifier: "7e0f21f01fe3bf91fc98254d4d211a51", applicationNumberText: "16123456", inventionTitle: "LEARNING ASSISTANCE DEVICE", patentNumber: "10902286",
+    documentCode: "NOA", documentCodeDescriptionText: "NOA", submissionDate: "2020-09-23", groupArtUnitNumber: 2641, officeActionText: "EXAMINER'S AMENDMENT &amp; reasons for allowance" },
+  { officeActionRecordIdentifier: "59a95b2cc615208718119d84c780952b", applicationNumberText: "16123456", inventionTitle: "LEARNING ASSISTANCE DEVICE",
+    documentCode: "CTNF", documentCodeDescriptionText: "Non-Final Rejections", submissionDate: "2020-03-27", groupArtUnitNumber: 2641, rejectionTypeBag: ["102", "DoublePatent", "Other"],
+    officeActionText: "Claims 1-10 are rejected under 35 U.S.C. 102" },
+];
+const HIT = { officeActionRecordIdentifier: "543aba1e02df4ff421308d4ab2226034", applicationNumberText: "18322045", documentCode: "CTNF", documentCodeDescriptionText: "Non-Final Rejections",
+  submissionDate: "2024-05-01", groupArtUnitNumber: 2836, rejectionTypeBag: ["101", "102", "103"],
+  officeActionText: "acts as a <b><span style='background-color: yellow;'>wireless</span></b> <b><span style='background-color: yellow;'>charging</span></b> pad (Graham &#182; [0025]) which acts as a <b><span sty ..." };
+const OA_TEXT = "DETAILED ACTION\r\nClaim Rejections - 35 USC 103   \r\n\r\n\r\n\r\nClaims 1-10 are rejected under 35 U.S.C. 103 as being unpatentable over Tuttle in view of Graham. " + "Further reasoning. ".repeat(400);
+const PETITION = {
+  petitionDecisionRecordIdentifier: "db2fa543-3e29-5c1a-8606-390f032bb1ac", applicationNumberText: "17711617", inventionTitle: "GENERATING MINORITY-CLASS EXAMPLES",
+  firstApplicantName: "NEC Laboratories America, Inc.", petitionMailDate: "2026-10-13", decisionDate: "2026-10-13",
+  decisionPetitionTypeCodeDescriptionText: "REVIVE AN APPLICATION ABANDONED - UNINTENTIONALLY DELAYED REPLY (37 CFR 1.137(A))",
+  decidedPetitionTypeCodeDescriptionText: "GRANTED", finalDecidingOfficeName: "OFFICE OF PETITIONS", ruleBag: ["37 CFR 1.137(a)"], technologyCenter: "1600",
+  ocrSearchText: "petition under 37 CFR 1.137(a) to <b><span style='background-color: yellow;'>revive</span></b> the application &lt;script&gt;x <<b>i>y",
+  allSearchableFields: "very long text that should never be shown",
+  documentBag: [{ documentCode: "PET.DEC.AUTO", documentIdentifier: "MV71JOQ8237X196", documentCodeDescriptionText: "ePetition Grant Letter", officialDate: "2026-10-13T18:50:42",
+    downloadOptionBag: [{ mimeTypeIdentifier: "PDF", downloadUrl: "https://api.uspto.gov/api/v1/download/applications/17711617/MV71JOQ8237X196/files/grantLetter.pdf", pageTotalQuantity: 1 }] }],
+};
+const notFound = () => new Response(JSON.stringify({ code: 404, error: "Not Found", errorDetails: "No matching records found" }), { status: 404 });
+
+function researchFetch(url, init, json) {
+  if (url.host !== "api.uspto.gov") return new Response("unexpected", { status: 500 });
+  const body = init.body ? JSON.parse(init.body) : {};
+  const filter = (name) => (body.filters || []).find((f) => f.name === name)?.value?.[0];
+  if (url.pathname === "/api/v1/patent/applications/search") {
+    if (/patentNumber:10902286$/.test(body.q || "")) return json({ count: 1, patentFileWrapperDataBag: [{ applicationNumberText: "16123456", applicationMetaData: { patentNumber: "10902286" } }] });
+    return notFound();
+  }
+  if (url.pathname === "/api/v1/patent/office-action/search") {
+    if (/nomatch/.test(body.q || "")) return notFound();
+    const app = filter("applicationNumberText");
+    if (app) {
+      let bag = app === "16123456" ? OA.slice() : [];
+      const code = filter("documentCode");
+      if (code) bag = bag.filter((o) => o.documentCode === code);
+      if (!bag.length) return notFound();
+      return json({ count: bag.length, officeActionDataBag: bag });
+    }
+    return json({ count: 9134, officeActionDataBag: [HIT], facets: { rejectionTypeBag: [{ value: "103", count: 7744 }, { value: "DoublePatent", count: 1025 }], documentCode: [{ value: "CTNF", count: 9134 }] } });
+  }
+  let m = url.pathname.match(/^\/api\/v1\/patent\/office-action\/([^/]+)\/download\/officeActionText$/);
+  if (m) return new Response(OA_TEXT, { status: 200, headers: { "content-type": "text/plain; charset=utf-8" } });
+  m = url.pathname.match(/^\/api\/v1\/patent\/office-action\/([^/]+)$/);
+  if (m) {
+    const rec = [...OA, HIT].find((o) => o.officeActionRecordIdentifier === decodeURIComponent(m[1]));
+    return rec ? json({ count: 1, officeActionDataBag: [rec] }) : notFound();
+  }
+  if (url.pathname === "/api/v1/petition/decisions/search") {
+    if (/nomatch/.test(body.q || "")) return notFound();
+    return json({ count: 1, petitionDecisionDataBag: [PETITION], facets: { decidedPetitionTypeCodeDescriptionText: [{ value: "GRANTED", count: 1 }] } });
+  }
+  return new Response("unexpected", { status: 500 });
+}
+
 globalThis.fetch = async (input, init = {}) => {
   const url = new URL(String(input));
   const headers = init.headers || {};
-  fs.appendFileSync(log, JSON.stringify({ host: url.host, path: url.pathname, protocol: url.protocol, method: init.method || "GET", key: headers["x-api-key"] || null, t: Date.now() }) + "\n");
+  fs.appendFileSync(log, JSON.stringify({ host: url.host, path: url.pathname, protocol: url.protocol, method: init.method || "GET", key: headers["x-api-key"] || null, body: typeof init.body === "string" ? init.body : null, t: Date.now() }) + "\n");
   const json = (o) => new Response(JSON.stringify(o), { status: 200, headers: { "content-type": "application/json" } });
   calls++;
   if (scenario && scenario.startsWith("feat")) return featFetch(url, init, json);
+  if (scenario === "res") return researchFetch(url, init, json);
   if (scenario && scenario.startsWith("retry-") && /\/patent\/applications\/\d+$/.test(url.pathname)) {
     const fail = (status, extra = {}) => new Response("busy", { status, headers: extra });
     const ok = () => json({ count: 1, patentFileWrapperDataBag: [{ applicationNumberText: "16123456", applicationMetaData: { inventionTitle: "Retry test widget" } }] });

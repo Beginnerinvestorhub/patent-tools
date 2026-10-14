@@ -2,6 +2,28 @@
 
 Versions follow semantic versioning.
 
+## 1.5.0 (unreleased)
+
+### Added
+- `search_office_actions`: full text search of USPTO office actions through
+  the new Open Data Portal Office Actions API
+  (`/api/v1/patent/office-action/search`). Filters by application or patent
+  number, action type, rejection type (101, 102, 103, 112, double
+  patenting), art unit and mailing date. Results carry a plain text excerpt
+  (USPTO highlight markup removed) and plain English rejection labels, plus
+  counts of rejection types and action types across all matches.
+- `get_office_action`: the full text of one office action, by its ID or as
+  the most recent action (optionally of one type) in an application or
+  granted patent, with the application's other office actions listed. Long
+  actions are paged with `startChar` like `get_document_text`.
+- `search_petition_decisions`: search of final petition decisions through
+  the Petition Decisions API (`/api/v1/petition/decisions/search`) by text,
+  application or patent number, outcome and decision date. Download links
+  that need the API key are left out; each result links to Patent Center.
+- `test/research.mjs`: 34 offline checks for the three tools against the
+  simulated USPTO, included in `npm run test:offline`. `test/smoke.mjs`
+  adds live checks for them.
+
 ## 1.4.0 (2026-10-10)
 
 ### Changed
