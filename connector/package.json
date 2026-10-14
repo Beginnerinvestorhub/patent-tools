@@ -1,7 +1,7 @@
 {
   "name": "patent-connector",
-  "version": "1.4.0",
-  "description": "MCP server for the USPTO Open Data Portal: search patents, read claims, abstracts and specifications, and view drawings with your own API key.",
+  "version": "1.5.0",
+  "description": "MCP server for the USPTO Open Data Portal: search patents, office actions and petition decisions, read claims and specifications, and view drawings with your own API key.",
   "main": "index.js",
   "bin": {
     "patent-connector": "index.js"
@@ -22,11 +22,12 @@
   },
   "scripts": {
     "test": "node test/smoke.mjs",
-    "pack": "npx -y @anthropic-ai/mcpb pack . ../patent-connector-1.4.0.mcpb",
+    "pack": "npx -y @anthropic-ai/mcpb pack . ../patent-connector-1.5.0.mcpb",
     "test:security": "node test/security.mjs",
     "test:retry": "node test/retry.mjs",
     "test:features": "node test/features.mjs",
-    "test:offline": "node test/security.mjs && node test/retry.mjs && node test/features.mjs",
+    "test:offline": "node test/security.mjs && node test/retry.mjs && node test/features.mjs && node test/research.mjs",
+    "test:research": "node test/research.mjs",
     "check:start": "node scripts/check-bundle.mjs"
   },
   "dependencies": {},
