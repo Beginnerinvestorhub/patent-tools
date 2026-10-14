@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Changed
+- The Claude Code marketplace installs the plugin from a slim `release`
+  branch instead of the whole repository. A new workflow
+  (`.github/workflows/release.yml`) builds it from `main` after CI passes,
+  leaving out the paths in `.github/release_exclude.txt`: connector and
+  skill tests with their binary USPTO PDF fixtures, the prompt test suite,
+  build scripts, the project site and the Devin and MCP registry manifests
+- The connector and root READMEs describe only the key prompts of Claude
+  Code and Claude Desktop; environment variable setup for Devin and hand
+  written MCP configs moved to `docs/OTHER_HOSTS.md` on `main`
+
 ## [1.4.0] - 2026-10-10
 
 ### Changed
