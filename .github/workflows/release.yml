@@ -1,0 +1,70 @@
+# Copyright 2026 Kevin Ringler
+# SPDX-License-Identifier: Apache-2.0
+#
+# Builds the `release` branch that the Claude Code marketplace installs
+# from (.claude-plugin/marketplace.json points there). It is main without
+# the paths in .github/release_exclude.txt: no tests, binary fixtures,
+# build scripts, project site or manifests for other hosts. Runs after CI
+# passes on main, or by hand from the Actions tab.
+name: Release branch
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-branch
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Build and push the release branch
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22.x"
+
+      - name: Build the release tree
+        run: .github/scripts/build_release.sh "$RUNNER_TEMP/release"
+
+      - name: Server in the release tree starts and lists all tools
+        run: node connector/scripts/check-bundle.mjs "$RUNNER_TEMP/release/connector/index.js"
+
+      - name: Commit and push the release branch
+        env:
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          work="$RUNNER_TEMP/branch"
+          if git ls-remote --exit-code --heads origin release >/dev/null; then
+            git fetch origin +refs/heads/release:refs/remotes/origin/release
+            git worktree add "$work" origin/release
+            git -C "$work" switch -C release
+          else
+            git worktree add --detach "$work"
+            git -C "$work" switch --orphan release
+          fi
+          # Replace the whole tree with the new build.
+          find "$work" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$RUNNER_TEMP/release/." "$work/"
+          git -C "$work" add -A
+          if git -C "$work" diff --cached --quiet; then
+            echo "release branch already matches $SOURCE_SHA"
+            exit 0
+          fi
+          git -C "$work" commit -m "Release build of $SOURCE_SHA"
+          git -C "$work" push origin release

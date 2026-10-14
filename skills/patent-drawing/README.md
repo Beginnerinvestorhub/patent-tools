@@ -141,14 +141,16 @@ THE DRAWINGS" (one sentence per figure) for your attorney to review.
 * `examples/conversations.md`: expected behavior for clear, ambiguous,
   refused, conflicting, failing and changing requests, including the draft
   Brief Description of the Drawings.
-* `tests/fixtures/numerals/`: a specification that matches the six sheet
-  example set (`spec-match.md`) and one that does not (`spec-mismatch.txt`,
-  `.docx`). Try:
-  `python scripts/check_numerals.py --spec tests/fixtures/numerals/spec-match.md examples/fig-1-claim-flowchart.svg examples/*/fig-*.svg`
-* `tests/fixtures/a4/`: an upright and a sideways A4 sheet drawn at the
-  documented limits.
+
+The numeral and A4 test fixtures (a specification that matches the six
+sheet example set, one that does not, and upright and sideways A4 sheets at
+the documented limits) are in `tests/` in the source repository. The
+installed Claude Code plugin leaves `tests/` out.
 
 ## Testing
+
+From the skill folder in the
+[source repository](https://github.com/Beginnerinvestorhub/patent-tools):
 
 ```
 python tests/run_script_tests.py
@@ -156,10 +158,9 @@ python tests/run_script_tests.py
 
 runs the automated script tests (checker, numeral checker, brief
 description, PDF builder, A4 sheets, and a standard library only run in a
-bare virtual environment that the runner creates for itself). Run it from the
-skill folder after installing to check the install; the PDF tests need the
-packages above. `tests/TEST_SUITE.md` holds the prompt tests and scoring
-matrix; record each run in its results log.
+bare virtual environment that the runner creates for itself). The PDF
+tests need the packages above. The prompt tests and scoring matrix are
+kept alongside the script tests; record each run in the results log there.
 
 ## Repository layout
 
@@ -172,6 +173,7 @@ scripts/                 check_drawing.py, check_numerals.py,
 assets/                  Blank sheet templates, granted reference drawings
 examples/                Passing example figures, example conversations
 tests/                   Test suite, fixtures, script test runner
+                         (source repository only, not installed)
 CHANGELOG.md             Version history
 SECURITY.md              Security notes and how to report a vulnerability
 LICENSE                  Apache License 2.0

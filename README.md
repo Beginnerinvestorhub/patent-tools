@@ -49,6 +49,12 @@ Pick the channel you use:
   claude plugin install patent-tools@patent-tools
   ```
 
+  The marketplace installs the plugin from the `release` branch, a copy
+  of `main` that CI builds after every green run. It leaves out tests,
+  fixtures, build scripts and the project site, so only what the plugin
+  runs is installed. The list of what it leaves out is
+  [.github/release_exclude.txt](.github/release_exclude.txt).
+
   Or copy just `skills/patent-drawing/` into `~/.claude/skills/`
   (all projects) or `.claude/skills/` (one project). The plugin starts
   `connector/index.js` directly. The server has no dependencies, so no
@@ -71,26 +77,9 @@ The connector needs your own free key from
   Claude Code prompts for the key (the sensitive `uspto_odp_api_key`
   option) and stores it in secure storage. You can change it later via
   the plugin's configure options. Nothing else to do.
-* **Other hosts using `mcp_config.json`:** that file reads the
-  `USPTO_ODP_API_KEY` environment variable. Set it once:
-  * **Windows:** run `setx USPTO_ODP_API_KEY "your_key_here"` in Command
-    Prompt or PowerShell, or add it under System Properties > Environment
-    Variables > User variables > New. Then close every terminal and quit
-    the app completely (including from the system tray) and start it again.
-  * **macOS and Linux:** add `export USPTO_ODP_API_KEY="your_key_here"` to
-    `~/.zshrc` (zsh, the macOS default) or `~/.bashrc` (bash), then open a
-    new terminal and start Claude Code from it.
-  * **Check:** `echo %USPTO_ODP_API_KEY%` (Command Prompt),
-    `echo $env:USPTO_ODP_API_KEY` (PowerShell) or `echo $USPTO_ODP_API_KEY`
-    (macOS and Linux) should print something. Do not paste the key into
-    chats, issues or screenshots.
-
-`.env.example` is for local development only: copy it to `.env`, add your
-key, and run Node with `--env-file` (for example
-`node --env-file=../.env test/smoke.mjs` from `connector/`). Neither the
-plugin nor the extension reads `.env`. More detail, including a Windows
-dialog walkthrough, is in
-[connector/README.md](connector/README.md#set-your-uspto-api-key).
+* **Other hosts (Devin, a hand written MCP config):** these pass the key
+  through the `USPTO_ODP_API_KEY` environment variable. See
+  [docs/OTHER_HOSTS.md](docs/OTHER_HOSTS.md).
 
 ## Example prompts
 
@@ -107,6 +96,9 @@ dialog walkthrough, is in
 .claude-plugin/marketplace.json  Marketplace entry for `claude plugin marketplace add`
 .mcp.json                    Plugin-provided Patent Connector MCP server
 .github/workflows/ci.yml     Offline tests on every push and pull request
+.github/workflows/release.yml  Builds the slim `release` branch the plugin installs from
+.github/release_exclude.txt  Paths left out of the `release` branch
+docs/OTHER_HOSTS.md          API key setup for Devin and hand written MCP configs
 connector/                   Patent Connector (USPTO) MCP server + .mcpb source
 skills/patent-drawing/       Patent Drawing skill (self-contained; zip this
                              folder for Claude.ai or copy it for Claude Code)
@@ -133,6 +125,9 @@ python tests/run_script_tests.py      # automated script tests
 The plugin, the desktop extension and `npx patent-connector` all run
 `connector/index.js` as is. There is no build step and nothing to rebuild.
 See [connector/README.md](connector/README.md#no-dependencies).
+
+To see exactly what the Claude Code plugin will install, build the release
+tree locally: `.github/scripts/build_release.sh /tmp/patent-tools-release`.
 
 ## Security and privacy
 

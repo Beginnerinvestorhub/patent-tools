@@ -37,75 +37,15 @@ How the key reaches the connector depends on how you installed it:
 * **Claude Code plugin (`.mcp.json`).** Claude Code prompts for the key
   when you enable the plugin (the sensitive `uspto_odp_api_key` option) and
   stores it in secure storage. No environment variable is needed.
-* **Other hosts (`mcp_config.json`).** The connector reads the
-  `USPTO_ODP_API_KEY` environment variable of the app or terminal that
-  starts the host. Set it once as shown below.
+* **Other hosts.** Hosts that do not prompt for the key (Devin, a
+  hand written MCP config) are covered in
+  [docs/OTHER_HOSTS.md](https://github.com/Beginnerinvestorhub/patent-tools/blob/main/docs/OTHER_HOSTS.md)
+  in the source repository.
 
 Get the key first: sign in at [data.uspto.gov](https://data.uspto.gov),
-open **My ODP**, and copy it.
-
-**Claude Code settings.json (alternative to the prompt)**
-
-Add the key to `~/.claude/settings.json`:
-
-```
-{
-  "env": {
-    "USPTO_ODP_API_KEY": "your_key_here"
-  }
-}
-```
-
-For a single project, put it in `.claude/settings.local.json` instead —
-that file is gitignored, so the key cannot be committed by accident.
-Restart Claude Code once after saving.
-
-**Windows environment variable**
-
-1. Open Command Prompt or PowerShell and run (with your own key inside the
-   quotes):
-
-   ```
-   setx USPTO_ODP_API_KEY "your_key_here"
-   ```
-
-   Or use the dialog: press Start, type "environment variables", open
-   **Edit the system environment variables**, click **Environment
-   Variables**, and under **User variables** click **New** with the name
-   `USPTO_ODP_API_KEY` and your key as the value.
-2. `setx` only affects programs started afterwards. Close every terminal
-   and quit the app completely (including from the system tray), then open
-   it again.
-
-**macOS and Linux**
-
-1. Add this line to your shell profile: `~/.zshrc` for zsh (the macOS
-   default) or `~/.bashrc` for bash.
-
-   ```
-   export USPTO_ODP_API_KEY="your_key_here"
-   ```
-
-2. Open a new terminal (or run `source ~/.zshrc`), then start Claude Code
-   from that terminal. Apps started from the Dock or a launcher may not read
-   your shell profile; start them from a terminal if the key is not found.
-
-**Check that it is set**
-
-* Windows Command Prompt: `echo %USPTO_ODP_API_KEY%`
-* PowerShell: `echo $env:USPTO_ODP_API_KEY`
-* macOS and Linux: `echo $USPTO_ODP_API_KEY`
-
-It should print something other than an empty line (or, on Windows, the
-literal `%USPTO_ODP_API_KEY%`). Treat the key like a password: do not paste
+open **My ODP**, and copy it. Treat the key like a password: do not paste
 it into chats, issues or screenshots. If it ever leaks, regenerate it in My
 ODP.
-
-**For local development** in this repository, copy `.env.example` (at the
-repository root) to `.env`, put your key in it, and pass it to Node with
-`--env-file`, for example `node --env-file=../.env test/smoke.mjs` from this
-folder. `.env` is ignored by git. The plugin and the extension do not read
-`.env`.
 
 ## Tools
 
@@ -162,7 +102,7 @@ the Open Data Portal.
 
 | Message | Fix |
 | --- | --- |
-| "No USPTO API key is configured" | Desktop extension: add your key under Settings > Extensions > Patent Connector. Claude Code plugin: enter the key in the plugin's settings and restart. Other hosts: set the `USPTO_ODP_API_KEY` environment variable and fully restart the app (see [Set your USPTO API key](#set-your-uspto-api-key)). |
+| "No USPTO API key is configured" | Desktop extension: add your key under Settings > Extensions > Patent Connector. Claude Code plugin: enter the key in the plugin's settings and restart. Other hosts: see [Set your USPTO API key](#set-your-uspto-api-key). |
 | "USPTO rejected the API key" | Check the key for typos, or generate a new one in My ODP. |
 | "not a valid USPTO application number" | Use the application number (for example 16123456) in `applicationNumber`, or pass a granted patent number as `patentNumber` instead. |
 | "does not look like a US patent number" | Write it like 12,399,789 or US 12,399,789 B1. Application numbers go in `applicationNumber`. |
@@ -176,23 +116,25 @@ See [PRIVACY.md](PRIVACY.md). In short: the extension collects nothing, has no s
 
 ## Development
 
+The tests, fixtures and build scripts live on the `main` branch of the
+[source repository](https://github.com/Beginnerinvestorhub/patent-tools)
+and are left out of the installed plugin. From `connector/` there:
+
 ```
 npm ci                                # test client only; the server has no dependencies
 npm run test:offline                  # security, retry and feature tests (no key, no network)
 node --env-file=../.env test/smoke.mjs   # live test suite (needs a key in ../.env)
 npm run check:start                   # server starts on its own and lists all tools
-npm run pack                          # builds ../patent-connector-1.4.0.mcpb
+npm run pack                          # builds the .mcpb desktop extension
 ```
 
-The offline suites start the server with a simulated USPTO
-(`test/mock-fetch.mjs`). `test/features.mjs` covers patent number lookup
-and `get_drawings` against a real USPTO drawings PDF
-(`test/fixtures/drw-18483359.pdf`, the published drawings of application
-18483359) and checks that every returned image is a valid PNG. Continuous
-integration runs the offline suites on every push and pull request; the
-live smoke test needs a key and runs only on your computer
-(`node --env-file=../.env test/smoke.mjs`, or `node test/smoke.mjs` with
-`USPTO_ODP_API_KEY` already set).
+The offline suites start the server with a simulated USPTO and check
+patent number lookup and `get_drawings` against real USPTO drawings PDFs.
+Continuous integration runs them on every push and pull request; the live
+smoke test needs a key and runs only on your computer. For local
+development, copy `.env.example` (at the repository root) to `.env` and put
+your key in it; `.env` is ignored by git, and neither the plugin nor the
+extension reads it.
 
 ### No dependencies
 
@@ -203,8 +145,8 @@ The server is plain, readable source with no npm dependencies: `index.js`
 The plugin, the `.mcpb` desktop extension and `npx patent-connector` all run
 `index.js` as is, so there is no build step and nothing to keep in sync.
 `npm ci` installs only the MCP SDK client that the offline tests use to talk
-to the server; it is a dev dependency and never shipped. The only value the
-server reads from its environment is `USPTO_ODP_API_KEY`.
+to the server; it is a dev dependency and never shipped. The only setting the
+server reads is the API key, which the host passes in from its own settings.
 
 ## Security
 
