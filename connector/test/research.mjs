@@ -146,8 +146,8 @@ try {
       petBody.rangeFilters?.[0]?.field === "decisionDate" && petBody.sort?.[0]?.field === "decisionDate" && !petBody.fields.includes("allSearchableFields"),
     JSON.stringify(petBody));
   const pet = r.json?.results?.[0];
-  check("petition result is summarized with outcome, rules, plain excerpt and decision documents",
-    pet && pet.outcome === "GRANTED" && pet.rules[0] === "37 CFR 1.137(a)" && pet.excerpt === "petition under 37 CFR 1.137(a) to revive the application" &&
+  check("petition result is summarized with outcome, rules, a markup free excerpt (even for encoded or nested tags) and decision documents",
+    pet && pet.outcome === "GRANTED" && pet.rules[0] === "37 CFR 1.137(a)" && pet.excerpt === "petition under 37 CFR 1.137(a) to revive the application scriptx iy" && !/[<>]/.test(pet.excerpt) &&
       pet.decisionDocuments?.[0]?.documentId === "MV71JOQ8237X196" && pet.decisionDocuments[0].pages === 1 &&
       pet.patentCenterUrl === "https://patentcenter.uspto.gov/applications/17711617" && r.json.outcomeCounts?.GRANTED === 1, JSON.stringify(pet));
   check("petition result leaves out the raw search blob and key protected download links",

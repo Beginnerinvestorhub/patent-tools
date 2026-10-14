@@ -121,7 +121,7 @@ const PETITION = {
   firstApplicantName: "NEC Laboratories America, Inc.", petitionMailDate: "2026-10-13", decisionDate: "2026-10-13",
   decisionPetitionTypeCodeDescriptionText: "REVIVE AN APPLICATION ABANDONED - UNINTENTIONALLY DELAYED REPLY (37 CFR 1.137(A))",
   decidedPetitionTypeCodeDescriptionText: "GRANTED", finalDecidingOfficeName: "OFFICE OF PETITIONS", ruleBag: ["37 CFR 1.137(a)"], technologyCenter: "1600",
-  ocrSearchText: "petition under 37 CFR 1.137(a) to <b><span style='background-color: yellow;'>revive</span></b> the application",
+  ocrSearchText: "petition under 37 CFR 1.137(a) to <b><span style='background-color: yellow;'>revive</span></b> the application &lt;script&gt;x <<b>i>y",
   allSearchableFields: "very long text that should never be shown",
   documentBag: [{ documentCode: "PET.DEC.AUTO", documentIdentifier: "MV71JOQ8237X196", documentCodeDescriptionText: "ePetition Grant Letter", officialDate: "2026-10-13T18:50:42",
     downloadOptionBag: [{ mimeTypeIdentifier: "PDF", downloadUrl: "https://api.uspto.gov/api/v1/download/applications/17711617/MV71JOQ8237X196/files/grantLetter.pdf", pageTotalQuantity: 1 }] }],

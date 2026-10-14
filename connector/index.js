@@ -932,10 +932,14 @@ async function getDrawings(args) {
 // ---------------------------------------------------------------------------
 
 // USPTO marks search hits in excerpts with HTML (<b><span ...>word</span></b>),
-// and its 500 character cut can leave a tag unfinished at the end.
+// and its 500 character cut can leave a tag unfinished at the end. The result
+// is plain text: tags are removed, entities decoded, and any angle bracket
+// left over (from nested or encoded markup) is dropped, so no markup survives.
 function plainExcerpt(s) {
   if (!s) return undefined;
-  return decodeEntities(String(s).replace(/<[^>]*>/g, "").replace(/<[^>]*$/, " ..."))
+  const text = String(s).replace(/<[^>]*>/g, "").replace(/<[^>]*$/, " ...");
+  return decodeEntities(text)
+    .replace(/[<>]/g, "")
     .replace(/\s+/g, " ")
     .trim();
 }
