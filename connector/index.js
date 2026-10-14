@@ -937,7 +937,16 @@ async function getDrawings(args) {
 // left over (from nested or encoded markup) is dropped, so no markup survives.
 function plainExcerpt(s) {
   if (!s) return undefined;
-  const text = String(s).replace(/<[^>]*>/g, "").replace(/<[^>]*$/, " ...");
+  // Keep only the characters outside tags. A tag cut off at the end is dropped
+  // and marked with " ...".
+  let text = "";
+  let inTag = false;
+  for (const ch of String(s)) {
+    if (ch === "<") inTag = true;
+    else if (ch === ">" && inTag) inTag = false;
+    else if (!inTag) text += ch;
+  }
+  if (inTag) text += " ...";
   return decodeEntities(text)
     .replace(/[<>]/g, "")
     .replace(/\s+/g, " ")
