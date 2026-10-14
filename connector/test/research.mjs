@@ -66,8 +66,8 @@ try {
       oaBody.facets.includes("rejectionTypeBag") && oaBody.fields.includes("officeActionText") && !oaBody.fields.includes("allSearchableFields") && oaBody.pagination.limit === 5 && !oaBody.sort,
     JSON.stringify(oaBody));
   const hit = r.json?.results?.[0];
-  check("result excerpt has the highlight markup removed and entities decoded",
-    hit && hit.excerpt === "acts as a wireless charging pad (Graham ¶ [0025]) ..." , hit?.excerpt);
+  check("result excerpt has the highlight markup removed, a cut off tag dropped and entities decoded",
+    hit && hit.excerpt === "acts as a wireless charging pad (Graham ¶ [0025]) which acts as a ..." && !/</.test(hit.excerpt), hit?.excerpt);
   check("result rejection types are labeled in plain English",
     hit && hit.rejectionTypes.join("|") === "35 U.S.C. 101 (eligibility or utility)|35 U.S.C. 102 (anticipation, not new)|35 U.S.C. 103 (obviousness)" && hit.artUnit === "2836" && hit.officeActionId === "543aba1e02df4ff421308d4ab2226034", JSON.stringify(hit));
   check("rejection type counts across all matches are labeled",

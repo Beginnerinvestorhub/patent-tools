@@ -931,10 +931,11 @@ async function getDrawings(args) {
 // Office actions and petition decisions (ODP datasets, applications filed 2001 on)
 // ---------------------------------------------------------------------------
 
-// USPTO marks search hits in excerpts with HTML (<b><span ...>word</span></b>).
+// USPTO marks search hits in excerpts with HTML (<b><span ...>word</span></b>),
+// and its 500 character cut can leave a tag unfinished at the end.
 function plainExcerpt(s) {
   if (!s) return undefined;
-  return decodeEntities(String(s).replace(/<[^>]*>/g, ""))
+  return decodeEntities(String(s).replace(/<[^>]*>/g, "").replace(/<[^>]*$/, " ..."))
     .replace(/\s+/g, " ")
     .trim();
 }

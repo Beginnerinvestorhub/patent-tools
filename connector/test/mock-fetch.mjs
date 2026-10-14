@@ -114,7 +114,7 @@ const OA = [
 ];
 const HIT = { officeActionRecordIdentifier: "543aba1e02df4ff421308d4ab2226034", applicationNumberText: "18322045", documentCode: "CTNF", documentCodeDescriptionText: "Non-Final Rejections",
   submissionDate: "2024-05-01", groupArtUnitNumber: 2836, rejectionTypeBag: ["101", "102", "103"],
-  officeActionText: "acts as a <b><span style='background-color: yellow;'>wireless</span></b> <b><span style='background-color: yellow;'>charging</span></b> pad (Graham &#182; [0025]) ..." };
+  officeActionText: "acts as a <b><span style='background-color: yellow;'>wireless</span></b> <b><span style='background-color: yellow;'>charging</span></b> pad (Graham &#182; [0025]) which acts as a <b><span sty ..." };
 const OA_TEXT = "DETAILED ACTION\r\nClaim Rejections - 35 USC 103   \r\n\r\n\r\n\r\nClaims 1-10 are rejected under 35 U.S.C. 103 as being unpatentable over Tuttle in view of Graham. " + "Further reasoning. ".repeat(400);
 const PETITION = {
   petitionDecisionRecordIdentifier: "db2fa543-3e29-5c1a-8606-390f032bb1ac", applicationNumberText: "17711617", inventionTitle: "GENERATING MINORITY-CLASS EXAMPLES",
