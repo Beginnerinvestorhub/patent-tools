@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="21.0cm" height="29.7cm"
+     viewBox="0 0 210 297"
+     font-family="Arial, Helvetica, sans-serif"
+     fill="none" stroke="#000000" stroke-width="0.4">
+  <title>A4 Patent Drawing Sheet Template</title>
+  <desc>Blank patent drawing sheet, units in mm. Preferred for PCT/EPO. Sight area x 25 to 195, y 25 to 287 (margins: top 25, left 25, right 15, bottom 10). Keep y 25 to 33 clear on multi sheet sets for the sheet number. Text font-size 4.6 mm minimum. Delete the margin-guides group before checking or delivery.</desc>
+  <g id="margin-guides" opacity="0.25" stroke="#999999" stroke-width="0.2" fill="none">
+    <rect x="25" y="25" width="170" height="262"/>
+    <line x1="25" y1="33" x2="195" y2="33" stroke-dasharray="2 2"/>
+  </g>
+  <!-- Draw figures here, inside the sight area. -->
+</svg>

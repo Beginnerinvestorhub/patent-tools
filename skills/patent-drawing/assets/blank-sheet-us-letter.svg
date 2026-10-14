@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="21.6cm" height="27.9cm"
+     viewBox="0 0 216 279"
+     font-family="Arial, Helvetica, sans-serif"
+     fill="none" stroke="#000000" stroke-width="0.4">
+  <title>US Letter Patent Drawing Sheet Template</title>
+  <desc>Blank patent drawing sheet, units in mm. Sight area x 25 to 201, y 25 to 269 (margins: top 25, left 25, right 15, bottom 10). Keep y 25 to 33 clear on multi sheet sets for the sheet number. Text font-size 4.6 mm minimum. Delete the margin-guides group before checking or delivery.</desc>
+  <g id="margin-guides" opacity="0.25" stroke="#999999" stroke-width="0.2" fill="none">
+    <rect x="25" y="25" width="176" height="244"/>
+    <line x1="25" y1="33" x2="201" y2="33" stroke-dasharray="2 2"/>
+  </g>
+  <!-- Draw figures here, inside the sight area. -->
+</svg>

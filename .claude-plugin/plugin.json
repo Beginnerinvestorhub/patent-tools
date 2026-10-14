@@ -1,0 +1,30 @@
+{
+  "name": "patent-tools",
+  "version": "1.4.0",
+  "description": "USPTO patent drawing skill plus live USPTO patent search, document reading and drawing viewing via the Patent Connector MCP server.",
+  "author": {
+    "name": "Kevin Ringler",
+    "url": "https://github.com/Beginnerinvestorhub"
+  },
+  "repository": "https://github.com/Beginnerinvestorhub/patent-tools",
+  "homepage": "https://github.com/Beginnerinvestorhub/patent-tools",
+  "license": "Apache-2.0",
+  "icon": ".claude-plugin/icon.png",
+  "privacyPolicyUrl": "https://github.com/Beginnerinvestorhub/patent-tools/blob/main/PRIVACY.md",
+  "userConfig": {
+    "uspto_odp_api_key": {
+      "type": "string",
+      "title": "USPTO ODP API key",
+      "description": "Free key from data.uspto.gov (sign in, then My ODP). Required for the Patent Connector tools; the drawing skill works without it.",
+      "sensitive": true,
+      "required": false
+    }
+  },
+  "keywords": [
+    "patents",
+    "uspto",
+    "patent drawings",
+    "prior art",
+    "intellectual property"
+  ]
+}
