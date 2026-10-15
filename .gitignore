@@ -3,8 +3,11 @@ node_modules/
 __pycache__/
 .DS_Store
 Thumbs.db
+Desktop.ini
+*.AppleDouble
+_*
 
 # local secrets
 .env
-.env.*
+*.env*
 !.env.example
