@@ -4,15 +4,16 @@
 # Builds the `release` branch that the Claude Code marketplace installs
 # from (.claude-plugin/marketplace.json points there). It is main without
 # the paths in .github/release_exclude.txt: no tests, binary fixtures,
-# build scripts, project site or manifests for other hosts. Runs after CI
-# passes on main, or by hand from the Actions tab.
+# build scripts, project site or manifests for other hosts. CI calls it
+# as its last job after every check passes on a push to main. It is called
+# from CI, not triggered by a workflow_run event, because the repository's
+# default branch is `release` (the plugin directory follows the default
+# branch), and workflow_run and workflow_dispatch only see workflows on the
+# default branch. A push event uses the workflow files in the pushed commit.
 name: Release branch
 
 on:
-  workflow_run:
-    workflows: [CI]
-    types: [completed]
-    branches: [main]
+  workflow_call:
   workflow_dispatch:
 
 permissions:
@@ -25,12 +26,11 @@ concurrency:
 jobs:
   publish:
     name: Build and push the release branch
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
       - uses: actions/setup-node@v7
@@ -45,7 +45,7 @@ jobs:
 
       - name: Commit and push the release branch
         env:
-          SOURCE_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+          SOURCE_SHA: ${{ github.sha }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

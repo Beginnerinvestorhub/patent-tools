@@ -95,3 +95,11 @@ jobs:
 
       - name: Script tests
         run: python tests/run_script_tests.py
+
+  release:
+    name: Build the release branch
+    needs: [connector, skill]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release.yml
