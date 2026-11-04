@@ -2,8 +2,11 @@
 
 How to handle the cases beyond a single one sheet flowchart. Every recipe
 here has a passing example in `examples/`, and all six examples together
-form one sequential set (`examples/example-set.pdf`, FIG. 1 to FIG. 5 on 6
-sheets).
+form one sequential set (FIG. 1 to FIG. 5 on 6 sheets). Build it with
+`python scripts/build_pdf.py` from `fig-1-claim-flowchart.svg`,
+`sideways-sheet/fig-2.svg`, `two-sheet-flowchart/fig-3a.svg`,
+`two-sheet-flowchart/fig-3b.svg`, `two-figures-one-sheet/fig-4.svg` and
+`ui-screen/fig-5.svg`, in that order.
 
 ## A full drawing set for a software application
 
