@@ -13,7 +13,7 @@ Usage:
 
 The specification may be .txt, .md or .docx (repeat --spec for several
 files). A .docx is read with the Python standard library only (zipfile plus
-XML parsing). Pure standard library: runs even where pip install is blocked.
+XML parsing). Pure standard library: no third party packages needed.
 
 Why: examiners object when a numeral in the drawings is never mentioned in
 the specification, when the specification refers to a figure that does not
