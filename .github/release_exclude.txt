@@ -32,3 +32,8 @@ connector/.mcpbignore
 # security review notes
 skills/patent-drawing/tests/
 skills/patent-drawing/docs/
+
+# Rendered example sheet set. The SVG source of every sheet ships in
+# skills/patent-drawing/examples/; the combined PDF stays on main only so
+# the plugin directory's validator can read every shipped file.
+skills/patent-drawing/examples/example-set.pdf
