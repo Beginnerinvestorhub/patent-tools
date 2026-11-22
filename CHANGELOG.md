@@ -11,6 +11,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   `search_petition_decisions`, using the USPTO Open Data Portal Office
   Actions and Petition Decisions datasets (see `connector/CHANGELOG.md`)
 
+- A `directory` branch, the edition submitted to the Claude plugin
+  directory. The directory refuses local MCP servers, scripts, SVG files
+  and install commands from organizations that are not Verified, so this
+  edition is the Patent Drawing skill alone, as Markdown and PNG images.
+  Claude checks each sheet from its SVG source instead of running the
+  checker, and the user builds the filing PDF.
+  `.github/scripts/build_directory.sh` builds it from the files in
+  `.github/directory/include.txt` and the rewrite in
+  `.github/directory/skill.patch`. `.github/scripts/check_directory.mjs`
+  checks it against the directory's rules in CI. The full plugin still
+  installs from the `release` branch.
+
 ### Changed
 - The `release` branch leaves out the example PDFs
   (`skills/patent-drawing/examples/example-set.pdf` and

@@ -83,8 +83,8 @@ The connector needs your own free key from
 
 ## Example prompts
 
-* "Search for prior art on partitioned read and write authority for data
-  isolation, filed before March 2024."
+* "Search for prior art on role-based access control for cloud
+  storage, filed before March 2024."
 * "Show me the drawings of patent 12,399,789."
 * "Read the claims of US 12,399,789 B1 and compare claim 1 to my invention."
 * "Draw FIG. 1 for my application as a block diagram that meets 37 CFR 1.84."

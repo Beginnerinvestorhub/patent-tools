@@ -86,7 +86,7 @@ the Open Data Portal.
 
 ## Example prompts
 
-* "Search for prior art on partitioned read and write authority for data isolation, filed before March 2024."
+* "Search for prior art on role-based access control for cloud storage, filed before March 2024."
 * "Find granted patents with the exact phrase 'data isolation' and summarize the top five."
 * "Read the claims of application 18483359 and compare claim 1 to my invention."
 * "What office actions has application 17941660 received, and what did the examiner cite?"
