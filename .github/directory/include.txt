@@ -1,0 +1,31 @@
+# Copyright 2026 Kevin Ringler
+# SPDX-License-Identifier: Apache-2.0
+#
+# Files copied from main into the `directory` branch, the edition submitted
+# to the Claude plugin directory (see .github/scripts/build_directory.sh).
+# The directory accepts only Markdown, text, JSON, YAML and images from
+# organizations that are not Verified, so this is an allow list: nothing
+# new ships there unless it is added here. One path per line, relative to
+# the repository root. A trailing slash means every PNG in that folder and
+# below. Lines starting with # are comments.
+
+.claude-plugin/icon.png
+LICENSE
+
+skills/patent-drawing/SKILL.md
+skills/patent-drawing/LICENSE
+skills/patent-drawing/NOTICE
+skills/patent-drawing/examples/conversations.md
+skills/patent-drawing/references/complex-figures.md
+skills/patent-drawing/references/compliance-checklist.md
+skills/patent-drawing/references/content-and-enablement.md
+skills/patent-drawing/references/design-patent-drawings.md
+skills/patent-drawing/references/efiling-and-color.md
+skills/patent-drawing/references/error-handling.md
+skills/patent-drawing/references/informal-vs-formal.md
+skills/patent-drawing/references/output-contract.md
+skills/patent-drawing/references/pct-epo-international.md
+skills/patent-drawing/references/plant-patent-drawings.md
+skills/patent-drawing/references/software-drawing-examples-and-legend.md
+skills/patent-drawing/references/uspto-37cfr184.md
+skills/patent-drawing/assets/reference_drawings/
