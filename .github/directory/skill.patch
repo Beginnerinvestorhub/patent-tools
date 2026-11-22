@@ -246,10 +246,24 @@ index 7d81a9a..9c425ba 100644
  ## 7. Plant patent (unsupported production)
  
 diff --git a/skills/patent-drawing/references/complex-figures.md b/skills/patent-drawing/references/complex-figures.md
-index 91ead92..e18b6bb 100644
+index 5e68f4d..87b50e8 100644
 --- a/skills/patent-drawing/references/complex-figures.md
 +++ b/skills/patent-drawing/references/complex-figures.md
-@@ -24,16 +24,15 @@ Rules for the set:
+@@ -2,11 +2,8 @@
+ 
+ How to handle the cases beyond a single one sheet flowchart. Every recipe
+ here has a passing example in `examples/`, and all six examples together
+-form one sequential set (FIG. 1 to FIG. 5 on 6 sheets). Build it with
+-`python scripts/build_pdf.py` from `fig-1-claim-flowchart.svg`,
+-`sideways-sheet/fig-2.svg`, `two-sheet-flowchart/fig-3a.svg`,
+-`two-sheet-flowchart/fig-3b.svg`, `two-figures-one-sheet/fig-4.svg` and
+-`ui-screen/fig-5.svg`, in that order.
++form one sequential set (FIG. 1 to FIG. 5 on 6 sheets): the sheets in
++`examples/svg-examples.md` from the claim flowchart on, in that order.
+ 
+ ## A full drawing set for a software application
+ 
+@@ -27,16 +24,15 @@ Rules for the set:
  - A part keeps the **same numeral on every figure** it appears in, even if
    that numeral comes from another figure's series (a server 110 shown again
    in FIG. 2 stays 110).
@@ -272,7 +286,7 @@ index 91ead92..e18b6bb 100644
  
  - Draw the device outline and screen as plain rectangles (rounded corners
    are fine). No photos, screenshots, logos, icons copied from real apps,
-@@ -50,7 +49,7 @@ Example: `examples/ui-screen/fig-5.svg`.
+@@ -53,7 +49,7 @@ Example: `examples/ui-screen/fig-5.svg`.
  
  ## Flowcharts too long for one sheet
  
@@ -281,7 +295,7 @@ index 91ead92..e18b6bb 100644
  
  - Split at a natural point and label the parts with the same number plus a
    capital letter: FIG. 3A, FIG. 3B (37 CFR 1.84(u)).
-@@ -65,18 +64,18 @@ Example: `examples/two-sheet-flowchart/fig-3a.svg` and `fig-3b.svg`.
+@@ -68,18 +64,18 @@ Example: `examples/two-sheet-flowchart/fig-3a.svg` and `fig-3b.svg`.
  
  ## Several figures on one sheet
  
@@ -304,7 +318,7 @@ index 91ead92..e18b6bb 100644
  
  Use only when a figure is too wide for an upright sheet. Under 37 CFR
  1.84(i) the top of the sheet goes on the **right side**, and every word
-@@ -95,8 +94,8 @@ Recipe (US Letter, 216 x 279 mm):
+@@ -98,8 +94,8 @@ Recipe (US Letter, 216 x 279 mm):
  4. All text goes inside the group so it turns with the figure. Do not add a
     rotate() of your own.
  
@@ -315,7 +329,7 @@ index 91ead92..e18b6bb 100644
  
  ## Top margin text: indicia and amendment labels
  
-@@ -105,18 +104,20 @@ The top margin may hold only:
+@@ -108,18 +104,20 @@ The top margin may hold only:
  - identifying indicia (37 CFR 1.84(c)), and
  - "Replacement Sheet", "New Sheet" or "Annotated Sheet" (37 CFR 1.121(d)).
  
@@ -345,7 +359,7 @@ index 91ead92..e18b6bb 100644
  
  ## Replacement sheets after filing
  
-@@ -124,12 +125,9 @@ y 0 to 25 mm. Anything else in a margin fails the checker.
+@@ -127,12 +125,9 @@ y 0 to 25 mm. Anything else in a margin fails the checker.
  2. Edit the original SVG in place. A replacement sheet must contain every
     figure that was on the original sheet, changed or not.
  3. A replacement sheet keeps its place in the set, so its sheet number must

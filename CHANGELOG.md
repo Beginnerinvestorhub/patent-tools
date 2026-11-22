@@ -24,6 +24,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   installs from the `release` branch.
 
 ### Changed
+- The `release` branch leaves out the example PDFs
+  (`skills/patent-drawing/examples/example-set.pdf` and
+  `fig-1-claim-flowchart.pdf`), which the plugin directory's validator could
+  not read. Every sheet in them still ships as SVG, and the skill docs
+  explain how to rebuild the set
 - The Claude Code marketplace installs the plugin from a slim `release`
   branch instead of the whole repository. A new workflow
   (`.github/workflows/release.yml`) builds it from `main` after CI passes,

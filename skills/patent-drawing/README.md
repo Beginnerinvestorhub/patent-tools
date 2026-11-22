@@ -137,7 +137,10 @@ THE DRAWINGS" (one sentence per figure) for your attorney to review.
   `examples/two-figures-one-sheet/`, `examples/sideways-sheet/`: a UI screen,
   a flowchart continued over two sheets, two figures on one sheet, and a
   sideways sheet. With the claim flowchart they form one sequential six
-  sheet set: `examples/example-set.pdf`.
+  sheet set (FIG. 1 to FIG. 5). The rendered PDF of that set,
+  `examples/example-set.pdf`, is in the source repository; the installed
+  Claude Code plugin ships only the SVG sheets. To rebuild it, see
+  `references/complex-figures.md`.
 * `examples/conversations.md`: expected behavior for clear, ambiguous,
   refused, conflicting, failing and changing requests, including the draft
   Brief Description of the Drawings.
