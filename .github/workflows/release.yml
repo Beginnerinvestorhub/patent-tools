@@ -10,6 +10,10 @@
 # default branch is `release` (the plugin directory follows the default
 # branch), and workflow_run and workflow_dispatch only see workflows on the
 # default branch. A push event uses the workflow files in the pushed commit.
+#
+# It also builds the `directory` branch, the edition submitted to the
+# Claude plugin directory: the drawing skill alone, as Markdown and images
+# (.github/scripts/build_directory.sh).
 name: Release branch
 
 on:
@@ -46,25 +50,27 @@ jobs:
       - name: Commit and push the release branch
         env:
           SOURCE_SHA: ${{ github.sha }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          work="$RUNNER_TEMP/branch"
-          if git ls-remote --exit-code --heads origin release >/dev/null; then
-            git fetch origin +refs/heads/release:refs/remotes/origin/release
-            git worktree add "$work" origin/release
-            git -C "$work" switch -C release
-          else
-            git worktree add --detach "$work"
-            git -C "$work" switch --orphan release
-          fi
-          # Replace the whole tree with the new build.
-          find "$work" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-          cp -a "$RUNNER_TEMP/release/." "$work/"
-          git -C "$work" add -A
-          if git -C "$work" diff --cached --quiet; then
-            echo "release branch already matches $SOURCE_SHA"
-            exit 0
-          fi
-          git -C "$work" commit -m "Release build of $SOURCE_SHA"
-          git -C "$work" push origin release
+        run: .github/scripts/push_branch.sh "$RUNNER_TEMP/release" release "$SOURCE_SHA"
+
+  directory:
+    # The edition submitted to the Claude plugin directory: the drawing
+    # skill as Markdown and images only (see build_directory.sh).
+    name: Build and push the directory branch
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22.x"
+
+      - name: Build and check the directory tree
+        run: .github/scripts/build_directory.sh "$RUNNER_TEMP/directory"
+
+      - name: Commit and push the directory branch
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+        run: .github/scripts/push_branch.sh "$RUNNER_TEMP/directory" directory "$SOURCE_SHA"

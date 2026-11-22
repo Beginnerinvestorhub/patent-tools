@@ -1,0 +1,717 @@
+diff --git a/skills/patent-drawing/SKILL.md b/skills/patent-drawing/SKILL.md
+index 78a9736..6e2a207 100644
+--- a/skills/patent-drawing/SKILL.md
++++ b/skills/patent-drawing/SKILL.md
+@@ -13,8 +13,9 @@ metadata:
+ # Patent Drawing Creator
+ 
+ Produces USPTO compliant patent drawings and checks existing figures.
+-Strongest for software and architecture inventions. Version 1.2.2; see
+-CHANGELOG.md.
++Strongest for software and architecture inventions. Version 1.2.2,
++directory edition: it ships no scripts or servers, so Claude checks each
++sheet from its SVG source and the user assembles the filing PDF.
+ 
+ ## When to use, and when not to
+ 
+@@ -28,8 +29,7 @@ Do **not** use for, and hand back to normal behavior or another skill:
+ - Trademark logos, copyright deposits or marketing images.
+ - Writing claims, specifications or legal opinions (this skill only drafts
+   and checks drawings; it can read claims to align figures with them).
+-- Deciding patentability or doing prior art searches (the Patent Connector
+-  tools do search; this skill does not judge results).
++- Deciding patentability or doing prior art searches.
+ 
+ If unsure whether a diagram is for a patent, ask once.
+ 
+@@ -37,7 +37,7 @@ If unsure whether a diagram is for a patent, ask once.
+ 
+ | Drawing type | What this skill does |
+ |---|---|
+-| Software flowcharts, block diagrams, network and architecture figures, UI screens, full multi sheet sets | Full production: SVG sheets, automated checks, PDF |
++| Software flowcharts, block diagrams, network and architecture figures, UI screens, full multi sheet sets | Full production: SVG sheets and a rule by rule check; the user builds the PDF |
+ | Simple mechanical or electrical line diagrams (schematic level) | Can draft; recommend a drafter or CAD for true orthographic, exploded or sectional views |
+ | Design patents | Rule guidance and review; complex surface shading of a real product needs CAD or a professional illustrator |
+ | Plant patents | Rule guidance only; plant drawings are usually photographs or color artwork Claude cannot produce |
+@@ -48,8 +48,7 @@ If unsure whether a diagram is for a patent, ask once.
+ 1. **Confidentiality.** Treat the invention as unpublished and confidential
+    unless the user says it is published. Never put invention details into
+    web search, outside tools or public services without the user's explicit
+-   OK. Reading the user's own published application through the Patent
+-   Connector by application number is fine.
++   OK.
+ 2. **No invention of facts.** Draw only steps, parts and connections the
+    user supplied (claims, description, sketch, or answers). Never invent a
+    claim step, a part, a connection or what a numeral means. If something is
+@@ -95,10 +94,8 @@ NO → UTILITY MODE (default)
+ Ask all missing questions in one message. For a bare request such as "draw
+ my invention", ask before drawing anything.
+ 
+-If the user's application or patent number is known and the Patent
+-Connector is installed, the claims can be fetched instead of asked for, and
+-filed or prior art drawings can be viewed. Follow
+-[references/patent-connector-tools.md](references/patent-connector-tools.md).
++This edition has no USPTO lookup tools. If the application is already
++published, ask the user to paste its claims and description.
+ 
+ ### 2. Load the rules
+ 
+@@ -114,18 +111,19 @@ filed or prior art drawings can be viewed. Follow
+ 
+ ### 3. Draft each sheet as SVG
+ 
+-Start from `assets/blank-sheet-us-letter.svg` or `assets/blank-sheet-a4.svg`
+-(viewBox in millimetres, so every number is a real size in mm). Copy
+-patterns from the passing examples: `examples/fig-1-claim-flowchart.svg`
+-(flowchart), `examples/ui-screen/`, `examples/two-sheet-flowchart/`,
+-`examples/two-figures-one-sheet/` and `examples/sideways-sheet/`.
++Start from a blank sheet in [assets/blank-sheets.md](assets/blank-sheets.md)
++(US Letter or A4; viewBox in millimetres, so every number is a real size
++in mm). Copy patterns from the passing examples in
++[examples/svg-examples.md](examples/svg-examples.md): a claim flowchart,
++a UI screen, a two sheet flowchart, two figures on one sheet and a
++sideways sheet.
+ 
+ | Item | Rule |
+ |---|---|
+ | Sight area (Letter) | x 25 to 201, y 25 to 269. Nothing outside it. |
+ | Sight area (A4) | x 25 to 195, y 25 to 287. Nothing outside it. |
+-| Sheet number band | Keep y 25 to 33 empty on multi sheet sets; `build_pdf.py` puts "1/3" there. |
+-| Margins | Empty, except identifying indicia and Replacement/New/Annotated Sheet labels in the top margin. Let `build_pdf.py --indicia / --label` add them. |
++| Sheet number band | Keep y 25 to 33 free of drawing. On multi sheet sets put only the sheet number there: `<text id="sheet-number" x="113" y="30.5" font-size="5" text-anchor="middle" fill="#000000" stroke="none">1/3</text>` (A4: x 110). |
++| Margins | Empty, except identifying indicia and Replacement/New/Annotated Sheet labels in the top margin, in `<g id="top-margin">` (complex-figures.md). |
+ | Text and lines | No text may touch or cross a line: size boxes to fit their labels (split long labels onto two lines) and start lead lines clear of the numeral. |
+ | Sideways sheet | Only when a figure is too wide. Follow the recipe in complex-figures.md (`data-orientation="landscape"` plus one group transform). |
+ | Text size | `font-size` 4.6 mm minimum (5 mm recommended). A 3.2 mm font size gives capitals only about 2.3 mm tall and fails the 0.32 cm rule. |
+@@ -145,55 +143,55 @@ reference sheets; the USPTO adds that at publication.
+ 
+ ### 4. Check (must pass before delivery)
+ 
+-```bash
+-python scripts/check_drawing.py fig-1.svg fig-2.svg fig-3.svg
+-```
+-
+-The checker covers sheet size, margins, color, text height, text touching
+-or crossing lines, text direction (upright and sideways sheets), FIG labels
+-and sequence, and lists every numeral. Use `--partial` when checking only
+-some sheets of a set (replacement sheets). Fix every FAIL and rerun until
+-OVERALL: PASS. Review every WARN.
+-
+-When the user gave the written description or claims (.txt, .md or .docx),
+-also run (repeat `--spec` for a separate claims file):
+-
+-```bash
+-python scripts/check_numerals.py --spec spec.docx fig-1.svg fig-2.svg
+-```
++This edition ships no checker scripts, so check every sheet yourself from
++its SVG source: work from the coordinates and sizes in the file, not from
++how it might look. For each sheet, confirm and note the result of:
+ 
+-It FAILs on drawing numerals the spec never uses, FIG labels the spec never
+-mentions and figures the spec mentions that do not exist, and WARNs on spec
+-numerals no drawing shows. Fix FAILs or ask the user which side is right;
+-never renumber to force a match or edit the user's spec. Both checkers need
+-no installs (svgelements is bundled in `scripts/vendor/`). Then do what a
+-script cannot: view each preview page (step 5) for lead lines crossing each
+-other, wrong arrows and crowding, and run the manual items in
++| Check | How |
++|---|---|
++| Sheet size | `viewBox` is `0 0 216 279` (Letter) or `0 0 210 297` (A4), the same on every sheet. |
++| Margins | Every shape and every text box lies inside the sight area; only `<g id="top-margin">` text sits above y 25. |
++| Text extent | Estimate each label's width as font size times 0.7 per capital or digit, 0.85 for M and W, 0.55 per lowercase letter and 0.3 for I, spaces and punctuation, measured from the anchor (half each way for `text-anchor="middle"`). Its height runs from the baseline up by the font size. Keep at least 1 mm clear of every line. |
++| Text and lines | No text box overlaps any line, box edge, arrow or lead line. |
++| Text size | Every `font-size` is 4.6 or more, including numerals and FIG labels. |
++| Color | Only `#000000` strokes and fills (white only as a label mask); no `opacity`, gradients, filters, `<image>` or markers; `margin-guides` deleted. |
++| Direction | Upright sheets have no rotated text; sideways sheets follow the recipe in complex-figures.md. |
++| FIG labels | Each figure has exactly one label; numbers run from FIG. 1 with no gaps or duplicates across the set (skip the "starts at 1" rule for replacement sheets only). |
++| Numerals | List every numeral on every sheet; the same part has the same numeral everywhere and no numeral names two parts. |
++
++When the user gave the written description or claims, also compare them
++with the drawings: a numeral drawn but never used in the text, a FIG label
++the text never mentions, or a figure the text mentions that is not drawn is
++a FAIL; a numeral the text uses that no drawing shows is a warning to
++confirm with the user. Ignore claim and paragraph numbers, dates, citations
++("37 CFR 1.84", "35 U.S.C. 112") and quantities ("120 mm", "about 250").
++Fix FAILs or ask the user which side is right; never renumber to force a
++match or edit the user's spec. Then run the manual items in
+ [compliance-checklist.md](references/compliance-checklist.md) (claim
+-coverage, flowchart versus claim steps).
++coverage, flowchart versus claim steps, lead lines crossing each other).
++Fix and recheck until nothing fails. Report these results as a self-check;
++never call them automated.
+ 
+-### 5. Build the PDF
+-
+-```bash
+-python scripts/build_pdf.py fig-1.svg fig-2.svg fig-3.svg -o drawings.pdf --preview previews/
+-```
++### 5. Hand over the filing PDF step
+ 
+-Adds sheet numbers, renders exact page size vector pages, embeds the font,
+-verifies the PDF and writes PNG previews. This is the only script that needs
+-packages: `pip install -r scripts/requirements.txt`.
++This edition cannot build PDFs. Deliver the SVG sheets and tell the user
++what the filing PDF needs ([efiling-and-color.md](references/efiling-and-color.md)):
++one page per sheet in order, each page exactly the sheet size (no scaling or
++"fit to page"), every font embedded, and nothing else on the page. A vector
++editor or print-to-PDF with those settings produces it; the user should
++check the page size and embedded fonts in the result.
+ 
+ ### 6. Deliver
+ 
+ Use the exact summary format in
+ [references/output-contract.md](references/output-contract.md).
+ It includes a draft BRIEF DESCRIPTION OF THE DRAWINGS for the user's
+-attorney to review: run `python scripts/brief_description.py` on the sheets
+-in sheet order (no packages needed), then fill each placeholder with what the
+-figure shows in the spec's own terms.
++attorney to review: one sentence per figure, in sheet order, built from the
++FIG labels and filled in with what the figure shows in the spec's own terms.
+ 
+ ## When something goes wrong
+ 
+-Missing information, script or install failures, conflicting claim and spec,
++Missing information, conflicting claim and spec,
+ unsupported requests and mid task changes are covered in
+ [references/error-handling.md](references/error-handling.md). Never skip a
+ failed check silently, and never report PASS for a check that did not run.
+diff --git a/skills/patent-drawing/examples/conversations.md b/skills/patent-drawing/examples/conversations.md
+index 7d81a9a..9c425ba 100644
+--- a/skills/patent-drawing/examples/conversations.md
++++ b/skills/patent-drawing/examples/conversations.md
+@@ -13,9 +13,9 @@ decisions are what matter.
+ **Expected:** No questions needed beyond sheet size (default US Letter).
+ Draws one sheet: START, 102 RECEIVE SENSOR DATA, 104 FILTER WITH THRESHOLD,
+ 106 decision VALUE > LIMIT? (NO loops back to 102), 108 GENERATE ALERT,
+-110 TRANSMIT ALERT, END, FIG. 1. Runs the checker and PDF build, views the
+-preview, runs `brief_description.py` on the sheet and fills its placeholder,
+-then replies with the output contract summary, including:
++110 TRANSMIT ALERT, END, FIG. 1. Self-checks the sheet from its SVG source,
++writes the brief description line, then replies with the output contract
++summary, including:
+ 
+ ```
+ Claim coverage
+@@ -31,12 +31,11 @@ BRIEF DESCRIPTION OF THE DRAWINGS (draft for your attorney to review)
+   FIG. 1 is a flowchart of a method of generating an alert from sensor data.
+ ```
+ 
+-For a set with partial views `brief_description.py` groups them, and the
+-filled line reads, for example, "FIGS. 3A and 3B together are a flowchart of
++For a set with partial views the line groups them and reads, for example, "FIGS. 3A and 3B together are a flowchart of
+ an order fulfillment method." Lettered views that show different things
+ (FIG. 4A a record, FIG. 4B session states) are split into one sentence each.
+ 
+-Result file: `examples/fig-1-claim-flowchart.svg`.
++Result file: the claim flowchart in `examples/svg-examples.md`.
+ 
+ ## 2. Ambiguous request
+ 
+@@ -68,18 +67,16 @@ paragraph [0031] says store then encrypt. The flowchart has to match one of
+ them. Which order is correct? Usually the claims govern." Draws nothing for
+ that sequence until answered.
+ 
+-## 5. Tool failure
++## 5. PDF requested
+ 
+-**Situation:** `pip install` fails because there is no network.
++**User:** Give me the filing PDF too.
+ 
+-**Expected:** The checkers need no installs (svgelements is bundled), so
+-Claude still runs `check_drawing.py` and reports its real result. Only the
+-PDF is missing: "I couldn't install the PDF tools here (no network). The
+-SVG sheets are drawn and the automated checker passed, but the PDF was NOT
+-BUILT. To finish, run `pip install -r scripts/requirements.txt`, then the
+-command below." Summary shows `Automated checker: PASS` and
+-`PDF build/verify: NOT BUILT (no network to install svglib and reportlab)`,
+-never PASS for the PDF.
++**Expected:** "This edition draws and checks the sheets but can't build
++the PDF. Put the SVG sheets into one PDF, one page per sheet in order,
++each page exactly 8.5 x 11 in with no scaling and every font embedded,
++then check the page size and fonts in the result." Summary shows
++`PDF: NOT BUILT (the user assembles it; see Open items)`, never PASS for
++the PDF. Claude does not install or download anything to build it.
+ 
+ ## 6. Change midway
+ 
+@@ -88,8 +85,8 @@ first.
+ 
+ **Expected:** Moves the system diagram to FIG. 1 and renumbers the others,
+ keeps every part's reference numeral unchanged (numerals follow parts, not
+-figure order, unless the user wants the series renumbered), reruns the
+-checker on the whole set and reports the new order.
++figure order, unless the user wants the series renumbered), rechecks the
++whole set and reports the new order.
+ 
+ ## 7. Plant patent (unsupported production)
+ 
+diff --git a/skills/patent-drawing/references/complex-figures.md b/skills/patent-drawing/references/complex-figures.md
+index 5e68f4d..87b50e8 100644
+--- a/skills/patent-drawing/references/complex-figures.md
++++ b/skills/patent-drawing/references/complex-figures.md
+@@ -2,11 +2,8 @@
+ 
+ How to handle the cases beyond a single one sheet flowchart. Every recipe
+ here has a passing example in `examples/`, and all six examples together
+-form one sequential set (FIG. 1 to FIG. 5 on 6 sheets). Build it with
+-`python scripts/build_pdf.py` from `fig-1-claim-flowchart.svg`,
+-`sideways-sheet/fig-2.svg`, `two-sheet-flowchart/fig-3a.svg`,
+-`two-sheet-flowchart/fig-3b.svg`, `two-figures-one-sheet/fig-4.svg` and
+-`ui-screen/fig-5.svg`, in that order.
++form one sequential set (FIG. 1 to FIG. 5 on 6 sheets): the sheets in
++`examples/svg-examples.md` from the claim flowchart on, in that order.
+ 
+ ## A full drawing set for a software application
+ 
+@@ -27,16 +24,15 @@ Rules for the set:
+ - A part keeps the **same numeral on every figure** it appears in, even if
+   that numeral comes from another figure's series (a server 110 shown again
+   in FIG. 2 stays 110).
+-- Check the whole set in one run, in sheet order:
+-  `python scripts/check_drawing.py fig-1.svg fig-2.svg ...`
+-- Build once: `python scripts/build_pdf.py fig-1.svg ... -o drawings.pdf --preview previews/`
+-  (sheet numbers "1/5" and so on are added automatically).
+-- Add identifying indicia if the user wants them:
+-  `--indicia "Title; Inventor name; Docket or application number"`.
++- Check the whole set together, in sheet order (SKILL.md, step 4), so FIG
++  sequence and numerals are compared across sheets.
++- Number the sheets "1/5", "2/5" and so on in the sheet number band.
++- Add identifying indicia if the user wants them (see "Top margin text"
++  below).
+ 
+ ## User interface screens
+ 
+-Example: `examples/ui-screen/fig-5.svg`.
++Example: FIG. 5 in [svg-examples.md](../examples/svg-examples.md).
+ 
+ - Draw the device outline and screen as plain rectangles (rounded corners
+   are fine). No photos, screenshots, logos, icons copied from real apps,
+@@ -53,7 +49,7 @@ Example: `examples/ui-screen/fig-5.svg`.
+ 
+ ## Flowcharts too long for one sheet
+ 
+-Example: `examples/two-sheet-flowchart/fig-3a.svg` and `fig-3b.svg`.
++Example: FIG. 3A and FIG. 3B in [svg-examples.md](../examples/svg-examples.md).
+ 
+ - Split at a natural point and label the parts with the same number plus a
+   capital letter: FIG. 3A, FIG. 3B (37 CFR 1.84(u)).
+@@ -68,18 +64,18 @@ Example: `examples/two-sheet-flowchart/fig-3a.svg` and `fig-3b.svg`.
+ 
+ ## Several figures on one sheet
+ 
+-Example: `examples/two-figures-one-sheet/fig-4.svg` (FIG. 4A and FIG. 4B).
++Example: FIG. 4A and FIG. 4B in [svg-examples.md](../examples/svg-examples.md).
+ 
+ - Allowed when the views are small and clearly separated (37 CFR 1.84(h)).
+ - Every view gets its own label, all views stand the same way up, and
+   there is clear space between them so no numeral could be read as
+   belonging to the other view.
+-- The checker lists every FIG label it finds on the sheet and checks the
+-  whole set's sequence.
++- List every FIG label on the sheet when checking, and check the whole
++  set's sequence.
+ 
+ ## Sideways sheets
+ 
+-Example: `examples/sideways-sheet/fig-2.svg`.
++Example: FIG. 2 in [svg-examples.md](../examples/svg-examples.md).
+ 
+ Use only when a figure is too wide for an upright sheet. Under 37 CFR
+ 1.84(i) the top of the sheet goes on the **right side**, and every word
+@@ -98,8 +94,8 @@ Recipe (US Letter, 216 x 279 mm):
+ 4. All text goes inside the group so it turns with the figure. Do not add a
+    rotate() of your own.
+ 
+-The checker fails any text on a landscape sheet that is not turned this
+-way, and any rotated text on an upright sheet.
++Text on a landscape sheet that is not turned this way fails, and so does
++any rotated text on an upright sheet.
+ 
+ ## Top margin text: indicia and amendment labels
+ 
+@@ -108,18 +104,20 @@ The top margin may hold only:
+ - identifying indicia (37 CFR 1.84(c)), and
+ - "Replacement Sheet", "New Sheet" or "Annotated Sheet" (37 CFR 1.121(d)).
+ 
+-Let `build_pdf.py` add them so placement and size are always right:
++Write them into the SVG as plain black text (font size 5 mm, no
++transforms), centred on the sheet, inside `<g id="top-margin">` and
++entirely within y 0 to 25 mm. One line goes at baseline y 14.5; with both
++a label and indicia, the label goes at y 10 and the indicia at y 19:
+ 
+-```bash
+-# indicia on every sheet
+-python scripts/build_pdf.py fig-*.svg -o drawings.pdf --indicia "Title; Inventor; Docket 123"
+-# corrected sheet 2 of a 5 sheet set, after filing
+-python scripts/build_pdf.py fig-2.svg -o replacement.pdf --label "Replacement Sheet" --sheet-start 2 --sheet-total 5
++```xml
++<g id="top-margin" font-size="5" text-anchor="middle" fill="#000000" stroke="none">
++  <text x="108" y="10">Replacement Sheet</text>
++  <text x="108" y="19">Title; Inventor; Docket 123</text>
++</g>
+ ```
+ 
+-If you write them into the SVG yourself, put plain black text (font size
+-4.6 mm or more, no transforms) inside `<g id="top-margin">` entirely within
+-y 0 to 25 mm. Anything else in a margin fails the checker.
++Use x 105 on A4. A line must fit the sheet width at about 3 mm per
++character. Anything else in a margin fails.
+ 
+ ## Replacement sheets after filing
+ 
+@@ -127,12 +125,9 @@ y 0 to 25 mm. Anything else in a margin fails the checker.
+ 2. Edit the original SVG in place. A replacement sheet must contain every
+    figure that was on the original sheet, changed or not.
+ 3. A replacement sheet keeps its place in the set, so its sheet number must
+-   stay the same ("2/5"). Build it with `--sheet-start 2 --sheet-total 5`.
+-4. Check just the changed sheets with `--partial`, which skips the "figures
+-   must start at FIG. 1" rule:
+-   `python scripts/check_drawing.py --partial fig-2.svg`
+-5. Build with `--label "Replacement Sheet"` (or, when rebuilding the whole
+-   set, add `--label-sheets 2` so only the changed sheet is labeled; label
+-   sheet numbers refer to positions in the set).
++   stay the same ("2/5") in its sheet number band.
++4. Check just the changed sheets, skipping only the "figures must start at
++   FIG. 1" rule.
++5. Add "Replacement Sheet" in the top margin of each changed sheet only.
+ 6. If the user's attorney wants a marked up copy, make a separate copy
+    labeled "Annotated Sheet" showing the changes.
+diff --git a/skills/patent-drawing/references/compliance-checklist.md b/skills/patent-drawing/references/compliance-checklist.md
+index 18d3328..704c148 100644
+--- a/skills/patent-drawing/references/compliance-checklist.md
++++ b/skills/patent-drawing/references/compliance-checklist.md
+@@ -4,36 +4,35 @@ Run every figure through this list before delivering. Report every item as
+ Pass/Fail to the user — do not silently fix and hide failures found along
+ the way, since the user should know what was close to a violation.
+ 
+-**Automated first.** Run `python scripts/check_drawing.py` on the whole set,
+-and `python scripts/check_numerals.py --spec <spec>` when a specification is
+-available. Neither needs any installs. They cover the items marked (auto)
+-below. Everything else needs a visual review of the rendered previews from
+-`scripts/build_pdf.py --preview`.
++**Numbers first.** Items marked (source) are checked from the coordinates
++and attributes in each SVG file, as in SKILL.md step 4. Work them out;
++do not judge them by eye. Everything else needs a careful read of the
++figure, and a look at a rendered image when the environment can show one.
+ 
+ ## Sheet-level
+ 
+-- [ ] (auto) Sheet is A4 or US Letter, and matches the size used on every other
++- [ ] (source) Sheet is A4 or US Letter, and matches the size used on every other
+       sheet in the set
+-- [ ] (auto) Top margin ≥ 2.5 cm / 1 in, no content in margin
+-- [ ] (auto) Left margin ≥ 2.5 cm / 1 in, no content in margin
+-- [ ] (auto) Right margin ≥ 1.5 cm / 5/8 in, no content in margin
+-- [ ] (auto) Bottom margin ≥ 1.0 cm / 3/8 in, no content in margin
++- [ ] (source) Top margin ≥ 2.5 cm / 1 in, no content in margin
++- [ ] (source) Left margin ≥ 2.5 cm / 1 in, no content in margin
++- [ ] (source) Right margin ≥ 1.5 cm / 5/8 in, no content in margin
++- [ ] (source) Bottom margin ≥ 1.0 cm / 3/8 in, no content in margin
+ - [ ] No frame/border drawn around the sight (usable) area
+ - [ ] No punched binding holes anywhere on the sheet
+-- [ ] (auto) Only identifying indicia and Replacement / New / Annotated Sheet
++- [ ] (source) Only identifying indicia and Replacement / New / Annotated Sheet
+       labels in the top margin, in `<g id="top-margin">`
+ - [ ] Replacement sheets include every figure from the original sheet and
+       keep their original sheet number
+ - [ ] Sheet number present as "N/Total" (e.g., "1/3") at the middle of the top
+       of the sheet but NOT in the margin, i.e. just inside the top of the sight
+       area (37 CFR 1.84(t)); only when the set has more than one sheet.
+-      `build_pdf.py` adds these; the checker keeps that band clear (auto).
++      Written in the band y 25 to 33, which holds nothing else (source).
+ 
+ ## Figure-level
+ 
+-- [ ] (auto) Figure labeled "FIG. N" (Arabic numeral, sub-letters only for sub-views)
+-- [ ] (auto) Figure numbers are sequential with no gaps or duplicates across the set
+-- [ ] (auto) All lines solid black, no color, no grey, no opacity
++- [ ] (source) Figure labeled "FIG. N" (Arabic numeral, sub-letters only for sub-views)
++- [ ] (source) Figure numbers are sequential with no gaps or duplicates across the set
++- [ ] (source) All lines solid black, no color, no grey, no opacity
+ - [ ] No gradient/photorealistic shading; hatching (if any) is evenly spaced
+       parallel lines, not solid fill
+ - [ ] Line weight is consistent and clean (no sketchy/freehand appearance)
+@@ -43,31 +42,29 @@ below. Everything else needs a visual review of the rendered previews from
+ - [ ] Every element that needs identification has a numeral
+ - [ ] No numeral is reused for two different elements anywhere in the set
+ - [ ] No element has two different numerals across figures
+-- [ ] (auto) All numerals and text ≥ 0.32 cm / 1/8 in tall. Note this is
++- [ ] (source) All numerals and text ≥ 0.32 cm / 1/8 in tall. Note this is
+       character height: in SVG use font-size ≥ 4.6 mm, because a 3.2 mm
+       font size produces capitals only about 2.3 mm tall
+-- [ ] (auto) No text touches or crosses a line (labels fit inside their
++- [ ] (source) No text touches or crosses a line (labels fit inside their
+       boxes, lead lines start clear of their numerals)
+ - [ ] Numerals are legible — not overlapping lines or placed inside hatching
+ - [ ] Numerals are not enclosed in brackets, quotes, parentheses, or circles
+-- [ ] (auto) Text reads left to right with the sheet upright, or on a sheet
++- [ ] (source) Text reads left to right with the sheet upright, or on a sheet
+       marked landscape, left to right with the sheet turned so its top is on
+       the right (37 CFR 1.84(i))
+ - [ ] Lead lines are short, don't cross each other, and terminate on the
+       feature they identify
+ - [ ] All text (including flowchart block labels) is in English
+-- [ ] (auto, check_numerals.py) Every numeral used in the drawings appears
++- [ ] (source) Every numeral used in the drawings appears
+       in the written description (ask the user for the spec text if not
+       already provided, and check)
+-- [ ] (auto, check_numerals.py) Every numeral used in the written description
+-      that refers to a drawn element appears in the drawings (the script
+-      warns on spec numerals not drawn; confirm each is intentional)
+-- [ ] (auto, check_numerals.py) Every FIG label in the drawings is mentioned
++- [ ] (source) Every numeral used in the written description
++      that refers to a drawn element appears in the drawings (a spec
++      numeral not drawn is a warning; confirm each is intentional)
++- [ ] (source) Every FIG label in the drawings is mentioned
+       in the specification, and every figure the specification mentions
+-      exists. Run `python scripts/check_numerals.py --spec spec.docx fig-*.svg`
+-      (.txt, .md or .docx; standard library only). Then confirm by eye that
+-      each matched numeral names the same part in both: the script matches
+-      numbers, not meanings
++      exists. Then confirm that each matched numeral names the same part
++      in both, not just the same number
+ 
+ ## Content and enablement (see also content-and-enablement.md)
+ 
+@@ -87,11 +84,11 @@ below. Everything else needs a visual review of the rendered previews from
+ - [ ] Multi-jurisdiction: A4 preferred, minimal text, pure black lines if
+       PCT/EPO filing is possible
+ 
+-## PDF (when delivering a filing set)
++## PDF (the user builds it; tell them to check)
+ 
+-- [ ] (auto, build_pdf.py) One PDF, every page exactly 8.5 x 11 in or A4
+-- [ ] (auto, build_pdf.py) All fonts embedded
+-- [ ] Previews viewed page by page; no overlaps or clipped content
++- [ ] One PDF, every page exactly 8.5 x 11 in or A4, no scaling
++- [ ] All fonts embedded
++- [ ] Each page viewed; no overlaps or clipped content
+ 
+ ## Report format to the user
+ 
+@@ -108,34 +105,19 @@ FIG. N — <short description>
+ If everything passes, say so plainly and note this is still not a substitute
+ for a final human/attorney review before filing.
+ 
+-## Limits of check_numerals.py
+-
+-Severity: FAIL (exit 1) for a drawing numeral the specification never uses,
+-a FIG label the specification never mentions, a figure the specification
+-mentions that is not drawn, or an unreadable or unsafe file. WARN (exit 0)
+-for a numeral the specification uses that no drawing shows, since it may be
+-an element the user chose not to draw. The last line is `OVERALL: PASS`,
+-`OVERALL: WARN` or `OVERALL: FAIL`.
+-
+-It is a heuristic. It treats a 2 to 4 digit number (optionally with one
+-lowercase letter, "202a") directly after a word ("server 110", "ship the
+-order (314)") as a numeral, plus lists and ranges that continue it
+-("elements 102, 104 and 106", "steps 302 through 310", "sensors
+-202a-202c"). A drawing numeral inside such a range counts as described
+-(same hundred series, or same base numeral for letters). It ignores claim
+-and paragraph references ("claims 2 to 4", "[0031]"), figure numbers, dates,
+-4 digit years that no drawing uses, patent and application numbers
+-("16/123,456", "7,669,123"), statute, rule and manual citations ("35 U.S.C.
+-112", "37 CFR 1.84", "MPEP 608.02", "Rule 84", "§ 112"; Rule, Article and
+-Title only when capitalized, so "a rule 214" still counts), decimals, numbers
+-with units ("120 mm", "250 ms", "50 %"), and numbers after quantity words
+-("about 250", "at least 100"). A FIG mention of a whole figure ("FIG. 3")
+-covers its partial views (FIG. 3A, FIG. 3B); "FIGS. 3A to 3C" covers 3A,
+-3B and 3C. The specification may be .txt, .md or .docx (read with the
+-standard library only); for a PDF, ask the user for one of these.
+-
+-It can still miss a numeral written in an unusual way (a number after a
+-quantity word or preposition, such as "data goes to 110"), or flag a plain
+-count written right after a noun ("a buffer 64 entries deep"). It matches
+-numbers, not meanings. Report what it finds, then check any surprising
+-result against the text before asking the user.
++## Reading numerals in a specification
++
++Treat a 2 to 4 digit number (optionally with one lowercase letter, "202a")
++directly after a word ("server 110", "ship the order (314)") as a numeral,
++plus lists and ranges that continue it ("elements 102, 104 and 106",
++"steps 302 through 310", "sensors 202a-202c"). Do not count claim and
++paragraph references ("claims 2 to 4", "[0031]"), figure numbers, dates and
++years, patent and application numbers ("16/123,456"), statute, rule and
++manual citations ("35 U.S.C. 112", "37 CFR 1.84", "MPEP 608.02"), decimals,
++numbers with units ("120 mm", "250 ms") and quantities ("about 250", "at
++least 100"). A mention of a whole figure ("FIG. 3") covers its partial views
++(FIG. 3A, FIG. 3B); "FIGS. 3A to 3C" covers 3A, 3B and 3C.
++
++A plain count right after a noun ("a buffer 64 entries deep") can look like
++a numeral. When a result is surprising, check the sentence before asking the
++user about it.
+diff --git a/skills/patent-drawing/references/efiling-and-color.md b/skills/patent-drawing/references/efiling-and-color.md
+index 959f336..5dec0c2 100644
+--- a/skills/patent-drawing/references/efiling-and-color.md
++++ b/skills/patent-drawing/references/efiling-and-color.md
+@@ -10,7 +10,7 @@ drawing content rules above:
+   flags PDFs with unembedded fonts). Patent Center converts submissions into
+   its Image File Wrapper (IFW) system, so the PDF must be clean: no password
+   protection, no embedded multimedia, no layers, forms or interactive
+-  content. `scripts/build_pdf.py` produces this and verifies font embedding.
++  content. The user should confirm font embedding in the PDF they build.
+ - **Resolution:** minimum 300 DPI; for line drawings specifically, 600 DPI
+   or higher is strongly recommended so fine lines and small reference
+   numerals stay sharp after USPTO's internal processing/reduction.
+diff --git a/skills/patent-drawing/references/error-handling.md b/skills/patent-drawing/references/error-handling.md
+index 416ad9f..0340d55 100644
+--- a/skills/patent-drawing/references/error-handling.md
++++ b/skills/patent-drawing/references/error-handling.md
+@@ -19,22 +19,16 @@ check as passed if it did not run, and never fill a gap by guessing.
+ 
+ | Situation | Do this |
+ |---|---|
+-| Python not available | Say so. Deliver SVG sheets only, run the manual checklist by hand, and mark every automated item as NOT RUN in the summary. Do not claim PASS. |
+-| `pip install` fails (no network, permissions, index blocked) | Try the documented command once. Do not work around the failure (no bootstrapping pip, alternate indexes, downloading wheels or editing config). The checkers need no installs, so still run `check_drawing.py`, `check_numerals.py` and `brief_description.py` and report their real results. Show the install error in one line, give the install command for the user to run, deliver SVGs, mark only the PDF as NOT BUILT. |
+-| `svgelements` missing | Nothing to do: `check_drawing.py` uses the copy bundled in `scripts/vendor/`. `check_numerals.py` needs only the standard library. Both run with no installs. If the checker still cannot import it (bundled folder deleted), it exits with an install hint; treat as NOT RUN. |
+-| `reportlab` missing when checking | The checker measures text with a built in table of the same Helvetica widths, so results are the same for ASCII labels; nothing to report. |
+-| `svglib` or `reportlab` missing | `build_pdf.py` is the only script that needs packages. It falls back to cairosvg when cairosvg and the Cairo library are installed (fonts then come from the system; say so). With neither engine it exits with an install message (`pip install svglib reportlab`). Deliver SVGs; PDF is NOT BUILT. |
+-| `pymupdf` missing | PDF still builds; verification and previews are skipped. Say "PDF built, font embedding and page size not verified, previews not generated" and do the visual review from the SVGs instead. |
+-| No TrueType font found | Ask the user for a font path (`--font`). Do not build with an unembedded font. |
+-| No specification provided | Do not run `check_numerals.py`. Summary shows `Numerals vs spec: NOT CHECKED (no specification provided)`. |
+-| `check_numerals.py` reports OVERALL: FAIL | Show each FAIL to the user (numeral drawn but never described, figure drawn but never mentioned, figure mentioned but not drawn) and ask which side is right (drawing or specification). Never renumber or rename to force a match, and never edit the user's specification. |
+-| `check_numerals.py` reports OVERALL: WARN | Spec numerals no drawing shows. List them and ask the user to confirm each was meant to stay undrawn; the summary shows MATCHED with warnings. |
+-| Specification is a PDF or other format | Ask the user for a .txt, .md or .docx copy (or save text the user pasted as .txt), then run `check_numerals.py`. |
+-| Checker reports FAIL | Fix and rerun. Report every failure found, including ones fixed, in the summary. |
+-| Checker FAIL cannot be fixed without changing what the figure shows | Stop and ask the user which content to change. |
+-| Patent Connector tools not installed | Ask the user to paste the claims. Never invent tool names or arguments. |
+-| Patent Connector returns an error (bad key, rate limit, not found) | Repeat the tool's plain English message to the user and ask how to proceed; offer to continue with pasted text. |
+-| Fetched document text is garbled (OCR errors) | Show the suspect passage and ask the user to confirm the wording before using it in a figure. |
++| User asks for the PDF | This edition cannot build it. Deliver the SVG sheets and the PDF requirements from SKILL.md step 5. Never install software or download tools to build it. |
++| No way to render the SVGs here | Do the self-check from the source, say the rendered review was NOT DONE, and ask the user to open each sheet and look for crowding and crossing lead lines. |
++| No specification provided | Skip the numeral comparison. Summary shows `Numerals vs spec: NOT CHECKED (no specification provided)`. |
++| Numeral comparison finds a FAIL | Show each FAIL to the user (numeral drawn but never described, figure drawn but never mentioned, figure mentioned but not drawn) and ask which side is right (drawing or specification). Never renumber or rename to force a match, and never edit the user's specification. |
++| Numeral comparison finds only warnings | Spec numerals no drawing shows. List them and ask the user to confirm each was meant to stay undrawn; the summary shows MATCHED with warnings. |
++| Specification is in a format you cannot read here | Ask the user to paste the text. |
++| Self-check finds a FAIL | Fix and recheck. Report every failure found, including ones fixed, in the summary. |
++| A FAIL cannot be fixed without changing what the figure shows | Stop and ask the user which content to change. |
++| User asks to look up a patent or application | This edition has no USPTO tools. Ask the user to paste the claims or description. Never invent tool names or results. |
++| Pasted document text is garbled (OCR errors) | Show the suspect passage and ask the user to confirm the wording before using it in a figure. |
+ 
+ ## Conflicts
+ 
+@@ -59,9 +53,9 @@ check as passed if it did not run, and never fill a gap by guessing.
+ 
+ | Situation | Do this |
+ |---|---|
+-| User adds, removes or reorders figures | Renumber FIG labels so they stay sequential, keep reference numerals stable for unchanged parts, rerun the checker on the whole set. |
+-| User changes a step or part | Edit only the affected SVGs in place. Update the same numeral everywhere it appears. Rerun the checker on the whole set. |
+-| User switches sheet size (Letter to A4 or back) | Rebuild every sheet on the new template (all sheets must match), rerun the checker. |
++| User adds, removes or reorders figures | Renumber FIG labels so they stay sequential, keep reference numerals stable for unchanged parts, recheck the whole set (SKILL.md step 4). |
++| User changes a step or part | Edit only the affected SVGs in place. Update the same numeral everywhere it appears. Recheck the whole set. |
++| User switches sheet size (Letter to A4 or back) | Rebuild every sheet on the new template (all sheets must match), recheck every sheet. |
+ | User switches mode (for example utility to design) | Confirm the change, then restart from Clarify for the new mode. Do not reuse utility figures as design figures. |
+ | After filing, user wants changes | Allowed only for form. Follow "Replacement sheets after filing" in complex-figures.md (keep every figure on the sheet, keep the sheet number, check with `--partial`, build with `--label "Replacement Sheet"`). Refuse anything that adds new matter. |
+ | Figure too wide for an upright sheet | First try a tighter layout or partial views; if still too wide, use a sideways sheet per complex-figures.md. |
+diff --git a/skills/patent-drawing/references/output-contract.md b/skills/patent-drawing/references/output-contract.md
+index 536cd76..035b84e 100644
+--- a/skills/patent-drawing/references/output-contract.md
++++ b/skills/patent-drawing/references/output-contract.md
+@@ -8,8 +8,6 @@ predictable and testable.
+ | File | When |
+ |---|---|
+ | `fig-1.svg`, `fig-2.svg` ... | Always. One file per sheet, in sheet order. If one sheet holds several views, name it by its first figure. |
+-| `drawings.pdf` | When the scripts are available. One PDF for the whole set. |
+-| `previews/sheet-1.png` ... | When pymupdf is available. Used for the visual review; share only if the user wants them. |
+ 
+ Deliver files to the user's outputs location. Do not deliver scratch files.
+ 
+@@ -44,11 +42,10 @@ Claim coverage
+   (or: "No claims provided; coverage not checked")
+ 
+ Checks
+-  Automated checker:   PASS | FAIL | NOT RUN (<reason>)
+-  PDF build/verify:    PASS | FAIL | NOT BUILT (<reason>)
+-  Visual review:       PASS | issues listed below
++  Self-check (source): PASS | FAIL (list)   (SKILL.md step 4; no checker script in this edition)
++  Rendered review:     PASS | NOT DONE (no way to render here)
++  PDF:                 NOT BUILT (the user assembles it; see Open items)
+   Numerals vs spec:    MATCHED | MATCHED with warnings (list) | MISMATCH (list) | NOT CHECKED (no specification provided)
+-                       (result of scripts/check_numerals.py when a spec was given)
+   Problems found and fixed: <list, or "none">
+ 
+ Assumptions (please confirm)
+@@ -64,37 +61,25 @@ Open items
+ <Disclaimer from SKILL.md>
+ ```
+ 
+-Numerals vs spec comes from `scripts/check_numerals.py`, run whenever the
+-user provided a specification or claims (.txt, .md or .docx; repeat `--spec`
+-for several files):
+-
+-```bash
+-python scripts/check_numerals.py --spec spec.docx fig-1.svg fig-2.svg
+-```
+-
+-Report its last line: `OVERALL: PASS` is MATCHED; `OVERALL: WARN` is MATCHED
+-with warnings (list each spec numeral not drawn and ask the user to confirm
+-it was meant to stay undrawn); `OVERALL: FAIL` is MISMATCH with each FAIL
+-listed (also under Open items). With no specification, write NOT CHECKED (no
+-specification provided); never MATCHED. The script is a heuristic, so still
+-confirm that each numeral names the same part in both.
++Numerals vs spec comes from comparing the drawings with the specification
++or claims the user provided (SKILL.md step 4). No mismatch is MATCHED; only
++spec numerals left undrawn is MATCHED with warnings (list each and ask the
++user to confirm it was meant to stay undrawn); any FAIL is MISMATCH with
++each FAIL listed (also under Open items). With no specification, write NOT
++CHECKED (no specification provided); never MATCHED. Always say the filing
++PDF still has to be built under Open items.
+ 
+ ## Brief Description of the Drawings (draft)
+ 
+ Whenever figures are delivered, include a draft "BRIEF DESCRIPTION OF THE
+ DRAWINGS" section in the summary, as shown above, so the user can paste it
+-into the specification. Produce it in two steps:
+-
+-1. Run `python scripts/brief_description.py fig-1.svg fig-2.svg ...` on the
+-   sheets in sheet order. It reads the FIG labels and prints one correctly
+-   numbered and grouped sentence per figure with a placeholder ("FIGS. 3A and
+-   3B together are <describe this view>.").
+-2. Fill every placeholder, following these rules:
++into the specification. Write one sentence per figure, in sheet order, from
++the FIG labels, following these rules:
+ 
+ - Use the usual form: "FIG. 1 is a block diagram of a monitoring system
+   according to an embodiment." or "FIG. 2 is a flowchart of a method of
+   generating an alert."
+-- The script groups every lettered view of one number. Keep the group for
++- Group the lettered views of one number for
+   partial views of one figure (a flowchart continued over two sheets:
+   "FIGS. 3A and 3B together are a flowchart of an order fulfillment
+   method."). When the lettered views show different things (FIG. 4A a
+@@ -102,8 +87,8 @@ into the specification. Produce it in two steps:
+ - Use the user's own terms and only what the figure actually shows. Do not
+   add features, advantages or claim language.
+ - If the specification already has this section, compare it with the
+-  figures instead and report differences under Open items (check_numerals.py
+-  also reports figures the specification mentions that do not exist).
++  figures instead and report differences under Open items, including
++  figures the specification mentions that do not exist.
+ - Always label it a draft for the user's patent attorney or agent to review;
+   it is text for the application, not part of the drawings.
+ 
+diff --git a/skills/patent-drawing/references/uspto-37cfr184.md b/skills/patent-drawing/references/uspto-37cfr184.md
+index 74a8004..92a7224 100644
+--- a/skills/patent-drawing/references/uspto-37cfr184.md
++++ b/skills/patent-drawing/references/uspto-37cfr184.md
+@@ -30,8 +30,7 @@ Source: 37 CFR 1.84(f)–(g).
+   inventor's name, and application number or docket number) on the front of
+   each sheet **within the top margin** (37 CFR 1.84(c)). Together with the
+   1.121(d) labels below, this is the only content allowed in a margin. In
+-  SVG put it in `<g id="top-margin">`, or let `build_pdf.py --indicia` add
+-  it.
++  SVG put it in `<g id="top-margin">` (complex-figures.md).
+ - A sheet may be turned on its side when a figure is too wide. The top of
+   the sheet then goes on the **right side**, and all words must read
+   left to right when the sheet is turned that way (37 CFR 1.84(i)). In
+@@ -42,8 +41,8 @@ Source: 37 CFR 1.84(f)–(g).
+   labeled "Replacement Sheet" in the top margin and must include every
+   figure that was on the original sheet, even unchanged ones; a sheet with
+   an added figure is labeled "New Sheet"; a marked up copy showing the
+-  changes is labeled "Annotated Sheet" (37 CFR 1.121(d)). Use
+-  `build_pdf.py --label`.
++  changes is labeled "Annotated Sheet" (37 CFR 1.121(d)), also in
++  `<g id="top-margin">`.
+ 
+ ## Lines and shading
+ 
