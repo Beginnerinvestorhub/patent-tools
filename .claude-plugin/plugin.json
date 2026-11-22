@@ -1,0 +1,20 @@
+{
+  "name": "patent-tools",
+  "version": "1.5.0",
+  "description": "USPTO patent drawing skill: drafts and checks figures under 37 CFR 1.84 (software flowcharts, block diagrams, UI screens) plus design, plant and PCT/EPO guidance.",
+  "author": {
+    "name": "Kevin Ringler",
+    "url": "https://github.com/Beginnerinvestorhub"
+  },
+  "repository": "https://github.com/Beginnerinvestorhub/patent-tools",
+  "homepage": "https://github.com/Beginnerinvestorhub/patent-tools",
+  "license": "Apache-2.0",
+  "icon": ".claude-plugin/icon.png",
+  "privacyPolicyUrl": "https://github.com/Beginnerinvestorhub/patent-tools/blob/directory/PRIVACY.md",
+  "keywords": [
+    "patents",
+    "uspto",
+    "patent drawings",
+    "intellectual property"
+  ]
+}
